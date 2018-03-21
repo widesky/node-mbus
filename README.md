@@ -41,10 +41,6 @@ mbusMaster.getData(1, function(err, data) {
 });
 ```
 
-## Usage informations
-
-...
-
 ## Method description
 
 ### MbusMaster(options)
@@ -159,6 +155,8 @@ Data example:
 ### scanSecondary(callback)
 This method scans for secondary IDs (?!) and returns an array with the found IDs.
 The callback is called with an *error* and *scanResult* parameter. The scan result is returned in the *scanResult* parameter as Array with the found IDs. If no IDs are found the Array is empty.
+The secondary scan can take a while, so > 60 seconds is very normal, with default timeout settings it's minimum 80 seconds! When there are ID collisions and scan needs to get a level deeper then it can take even longer.
+So just know that it can take very long :-)
 
 ## Todo
 * Also build the libmbus binaries and tools? (if needed)
