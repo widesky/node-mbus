@@ -97,7 +97,8 @@ describe('Native libmbus node-module TCP test ...', function() {
 
             var mbusOptions = {
                 host: '127.0.0.1',
-                port: port
+                port: port,
+                timeout: 100
             };
             var mbusMaster = new MbusMaster(mbusOptions);
             var connectResult = mbusMaster.connect();

@@ -26,7 +26,8 @@ MbusMaster.prototype.connect = function connect(callback) {
         return true;
     }
     if (this.options.host && this.options.port) {
-        if (this.mbusMaster.openTCP(this.options.host, this.options.port)) {
+        if (!this.options.timeout) this.options.timeout = 0;
+        if (this.mbusMaster.openTCP(this.options.host, this.options.port, this.options.timeout/1000)) {
             if (callback) {
                 callback(null);
             }

@@ -26,6 +26,7 @@ var MbusMaster = require('node-mbus');
 var mbusOptions = {
     host: '127.0.0.1',
     port: port,
+    timeout: 2000
     autoConnect: true
 };
 var mbusMaster = new MbusMaster(mbusOptions);
@@ -46,7 +47,7 @@ mbusMaster.getData(1, function(err, data) {
 ### MbusMaster(options)
 Constructor to initialize the MBusMaster instance to interact with the devices.
 In the options object you set the communication and other parameter for the library:
-* *host*/*port*: For TCP communication you set the *host* and the *port* to connect to. Both parameters are mandatory
+* *host*/*port*/*timeout*: For TCP communication you set the *host* and the *port* to connect to. Both parameters are mandatory. By setting the optional *timeout* in ms you can overwrite the default timeout (4000ms)
 * *serialPort*/*serialBaudRate*: For Serial communication you set the *serialPort* (e.g. /dev/ttyUSB0) and optionally the *serialBaudRate* to connect. Default Baudrate is 2400baut if option is missing
 * *autoConnect*: set to "true" if connection should be established automatically when needed - else you need to call "connect()" before you can communicate with the devices.
 

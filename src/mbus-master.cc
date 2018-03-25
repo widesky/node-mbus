@@ -78,6 +78,7 @@ NAN_METHOD(MbusMaster::OpenTCP) {
 
   int port = (long)info[1]->IntegerValue();
   char *host = get(info[0]->ToString(), "127.0.0.1");
+  double timeout = (double)info[2]->NumberValue();
 
   if(!obj->connected) {
     obj->serial = false;
@@ -93,6 +94,11 @@ NAN_METHOD(MbusMaster::OpenTCP) {
         return;
     }
     free(host);
+
+    if (timeout > 0.0) {
+        mbus_tcp_set_timeout_set(timeout);
+    }
+
     if (mbus_connect(obj->handle) == -1)
     {
       mbus_context_free(obj->handle);
