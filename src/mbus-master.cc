@@ -18,7 +18,7 @@ Nan::Persistent<v8::FunctionTemplate> MbusMaster::constructor;
 MbusMaster::MbusMaster() {
   connected = false;
   serial = true;
-  communicationInProgress = false:
+  communicationInProgress = false;
   handle = NULL;
   uv_rwlock_init(&queueLock);
 }
