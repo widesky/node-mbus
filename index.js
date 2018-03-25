@@ -13,6 +13,12 @@ function MbusMaster(options) {
 }
 
 MbusMaster.prototype.connect = function connect(callback) {
+    if (this.mbusMaster.connected && this.mbusMaster.communicationInProgress) {
+        if (callback) {
+            callback(new Error('Communication already in progress'));
+        }
+        return false;
+    }
     if (this.mbusMaster.connected) {
         if (callback) {
             callback(null);
@@ -55,6 +61,12 @@ MbusMaster.prototype.connect = function connect(callback) {
 };
 
 MbusMaster.prototype.close = function close(callback) {
+    if (this.mbusMaster.connected && this.mbusMaster.communicationInProgress) {
+        if (callback) {
+            callback(new Error('Communication still in progress.'));
+        }
+        return false;
+    }
     if (!this.mbusMaster.connected) {
         if (callback) {
             callback(null);

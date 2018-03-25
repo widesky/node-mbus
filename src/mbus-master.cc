@@ -18,16 +18,18 @@ Nan::Persistent<v8::FunctionTemplate> MbusMaster::constructor;
 MbusMaster::MbusMaster() {
   connected = false;
   serial = true;
+  communicationInProgress = false:
   handle = NULL;
   uv_rwlock_init(&queueLock);
 }
 
 MbusMaster::~MbusMaster(){
-  if(connected) {
+  if(connected && handle) {
     mbus_disconnect(handle);
   }
   if(handle) {
     mbus_context_free(handle);
+    handle = NULL;
   }
   uv_rwlock_destroy(&queueLock);
 }
@@ -180,9 +182,14 @@ NAN_METHOD(MbusMaster::OpenSerial) {
 }
 
 NAN_METHOD(MbusMaster::Close) {
-    Nan::HandleScope scope;
+  Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+  MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+
+  if(obj->communicationInProgress) {
+    info.GetReturnValue().Set(Nan::False());
+    return;
+  }
 
   if(obj->connected) {
     mbus_disconnect(obj->handle);
@@ -335,7 +342,11 @@ class RecieveWorker : public Nan::AsyncWorker {
   // this function will be run inside the main event loop
   // so it is safe to use V8 again
   void HandleOKCallback () {
-      Nan::HandleScope scope;
+    Nan::HandleScope scope;
+
+    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+
+    obj->communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -346,7 +357,11 @@ class RecieveWorker : public Nan::AsyncWorker {
   };
 
   void HandleErrorCallback () {
-      Nan::HandleScope scope;
+    Nan::HandleScope scope;
+
+    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+
+    obj->communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
@@ -362,13 +377,15 @@ class RecieveWorker : public Nan::AsyncWorker {
 };
 
 NAN_METHOD(MbusMaster::Get) {
-    Nan::HandleScope scope;
+  Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+  MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
   char *address = get(info[0]->ToString(),"0");
   Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
   if(obj->connected) {
+    obj->communicationInProgress = true;
+
     Nan::AsyncQueueWorker(new RecieveWorker(callback, address, &(obj->queueLock), obj->handle));
   } else {
     Local<Value> argv[] = {
@@ -473,7 +490,10 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
   // this function will be run inside the main event loop
   // so it is safe to use V8 again
   void HandleOKCallback () {
-      Nan::HandleScope scope;
+    Nan::HandleScope scope;
+    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+
+    obj->communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -484,7 +504,11 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
   };
 
   void HandleErrorCallback () {
-      Nan::HandleScope scope;
+    Nan::HandleScope scope;
+
+    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+
+    obj->communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
@@ -504,6 +528,8 @@ NAN_METHOD(MbusMaster::ScanSecondary) {
 
   Nan::Callback *callback = new Nan::Callback(info[0].As<Function>());
   if(obj->connected) {
+    obj->communicationInProgress = true;
+
     Nan::AsyncQueueWorker(new ScanSecondaryWorker(callback, &(obj->queueLock), obj->handle));
   } else {
     Local<Value> argv[] = {
@@ -520,6 +546,9 @@ NAN_GETTER(MbusMaster::HandleGetters) {
   std::string propertyName = std::string(*Nan::Utf8String(property));
   if (propertyName == "connected") {
     info.GetReturnValue().Set(obj->connected);
+  }
+  else if (propertyName == "communicationInProgress") {
+    info.GetReturnValue().Set(obj->communicationInProgress);
   } else {
     info.GetReturnValue().Set(Nan::Undefined());
   }

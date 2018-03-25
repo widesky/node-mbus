@@ -27,6 +27,7 @@ class MbusMaster : public Nan::ObjectWrap {
   static Nan::Persistent<v8::FunctionTemplate> constructor;
 
   bool connected;
+  bool communicationInProgress;
   mbus_handle *handle;
   uv_rwlock_t queueLock;
   bool serial;

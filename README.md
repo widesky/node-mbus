@@ -164,6 +164,9 @@ So just know that it can take very long :-)
 
 ## Changelog
 
+### v0.4.0 (2018.03.25)
+* library now tries to make sure that one ine request/scan runs and also connect/close should be secured
+
 ### v0.3.0 (2018.03.15)
 * official release
 
