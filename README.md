@@ -56,11 +56,11 @@ Call this method to connect to TCP/Serial. Needs to be done before you can commu
 The optional callback will be called with an *error* parameter that is *null* on success.
 The method will return true/false when no callback is provided.
 
-### close(callback)
+### close(callback, waitTillClosed)
 Call this method to close the TCP/Serial connections.
 The optional callback will be called with an *error* parameter that is *null* on success.
 The method will return true/false when no callback is provided.
-When you try to close the connection while communication is in progress you will get false as result/callback with error.
+When you try to close the connection while communication is in progress you will get false as result/callback with error when *waitTillClosed* is not set or false. When you set *waitTillClosed* to true and use a callback the library waits till the current communication is finished (will be checked any 500ms) and calls the callback then after a successful close.
 
 ### getData(address, callback)
 This method is requesting "Class 2 Data" from the device with the given *address*.
@@ -172,6 +172,7 @@ So just know that it can take very long :-)
 ### v0.4.x (2018.03.25)
 * library now tries to make sure that only one request/scan runs and also connect/close should be secured
 * add option to overwrite default tcp timeout
+* allow close when using callback to wait till connection can be closed (will check any 500ms)
 
 ### v0.3.0 (2018.03.15)
 * official release
