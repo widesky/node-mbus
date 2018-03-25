@@ -169,7 +169,7 @@ So just know that it can take very long :-)
 
 ## Changelog
 
-### v0.4.0 (2018.03.25)
+### v0.4.x (2018.03.25)
 * library now tries to make sure that only one request/scan runs and also connect/close should be secured
 * add option to overwrite default tcp timeout
 
