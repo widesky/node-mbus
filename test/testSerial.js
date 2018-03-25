@@ -140,6 +140,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                     server.close();
                 }
                 expect(mbusMaster.mbusMaster.connected).to.be.true;
+                expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
                 setTimeout(function() {
                     console.log(new Date().toString() + ': mbus-Serial-Master Send "Get 1"');
 
@@ -149,6 +150,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                         expect(err).to.be.null;
                         expect(data.SlaveInformation.Id).to.be.equal(11490378);
                         expect(data.DataRecord[0].Value).to.be.equal(11490378);
+                        expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
                         mbusMaster.getData(2, function(err, data) {
                             console.log(new Date().toString() + ': mbus-Serial-Master err: ' + err);
@@ -156,6 +158,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                             expect(err).to.be.null;
                             expect(data.SlaveInformation.Id).to.be.equal(5000244);
                             expect(data.DataRecord[0].Value).to.be.equal(1252);
+                            expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
                             mbusMaster.scanSecondary(function(err, data) {
                                 console.log(new Date().toString() + ': mbus-Serial-Master err: ' + err);
@@ -164,6 +167,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                                 expect(data).to.be.an('array');
                                 expect(data.length).to.be.equal(1);
                                 expect(data[0]).to.be.equal('17834320B4090107');
+                                expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
                                 setTimeout(function() {
                                     console.log(new Date().toString() + ': mbus-Serial-Master Close: ' + mbusMaster.close());
@@ -178,15 +182,16 @@ describe('Native libmbus node-module Serial test ...', function() {
                                     }, 1000);
                                 }, 1000);
                             });
-                            setTimeout(function() {
-                                expect(mbusMaster.close()).to.be.false;
-                                mbusMaster.getData(3, function(err, data) {
-                                    expect(err).to.be.an('object');
-                                    expect(err.message).to.be.equal('Communication already in progress');
-                                });
-                            }, 100);
+                            console.log('Try parallel close/read');
+                            expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
+                            expect(mbusMaster.close()).to.be.false;
+                            mbusMaster.getData(3, function(err, data) {
+                                expect(err).to.be.an('object');
+                                expect(err.message).to.be.equal('Communication already in progress');
+                            });
                         });
                     });
+                    expect(mbusMaster.mbusMaster.communicationInProgress).to.be.true;
                 }, 2000);
             }, 2000);
         });
