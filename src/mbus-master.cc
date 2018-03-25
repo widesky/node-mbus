@@ -45,6 +45,7 @@ NAN_MODULE_INIT(MbusMaster::Init) {
 
   // link our getters and setter to the object property
   Nan::SetAccessor(ctor->InstanceTemplate(), Nan::New("connected").ToLocalChecked(), MbusMaster::HandleGetters, MbusMaster::HandleSetters);
+  Nan::SetAccessor(ctor->InstanceTemplate(), Nan::New("communicationInProgress").ToLocalChecked(), MbusMaster::HandleGetters, MbusMaster::HandleSetters);
 
   // Prototype
   Nan::SetPrototypeMethod(ctor, "openSerial", OpenSerial);
