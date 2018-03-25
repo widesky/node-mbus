@@ -344,7 +344,7 @@ class RecieveWorker : public Nan::AsyncWorker {
   void HandleOKCallback () {
     Nan::HandleScope scope;
 
-    communicationInProgress = false;
+    *communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -357,7 +357,7 @@ class RecieveWorker : public Nan::AsyncWorker {
   void HandleErrorCallback () {
     Nan::HandleScope scope;
 
-    communicationInProgress = false;
+    *communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
@@ -489,7 +489,7 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
   void HandleOKCallback () {
     Nan::HandleScope scope;
 
-    communicationInProgress = false;
+    *communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -502,7 +502,7 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
   void HandleErrorCallback () {
     Nan::HandleScope scope;
 
-    communicationInProgress = false;
+    *communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
