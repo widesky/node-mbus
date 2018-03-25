@@ -139,7 +139,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                     testSocket.destroy();
                     server.close();
                 }
-                setTimeout(function() {
+                var emergencyTimeout = setTimeout(function() {
                     socat.kill('SIGKILL');
                     testSocket.destroy();
                     server.close();
@@ -175,6 +175,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                                 expect(data[0]).to.be.equal('17834320B4090107');
                                 expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
+                                clearTimeou(emergencyTimeout);
                                 setTimeout(function() {
                                     console.log(new Date().toString() + ': mbus-Serial-Master Close: ' + mbusMaster.close());
                                     socat.kill('SIGKILL');
@@ -188,8 +189,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                                     }, 1000);
                                 }, 1000);
                             });
-                            console.log('Try parallel close/read');
-                            expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
+                            expect(mbusMaster.mbusMaster.communicationInProgress).to.be.true;
                             expect(mbusMaster.close()).to.be.false;
                             mbusMaster.getData(3, function(err, data) {
                                 expect(err).to.be.an('object');
