@@ -175,7 +175,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                                 expect(data[0]).to.be.equal('17834320B4090107');
                                 expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
-                                clearTimeou(emergencyTimeout);
+                                if (emergencyTimeout) clearTimeout(emergencyTimeout);
                                 setTimeout(function() {
                                     console.log(new Date().toString() + ': mbus-Serial-Master Close: ' + mbusMaster.close());
                                     socat.kill('SIGKILL');
