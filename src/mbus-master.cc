@@ -383,7 +383,7 @@ NAN_METHOD(MbusMaster::Get) {
   if(obj->connected) {
     obj->communicationInProgress = true;
 
-    Nan::AsyncQueueWorker(new RecieveWorker(callback, address, &(obj->queueLock), obj->handle, &(objs->communicationInProgress)));
+    Nan::AsyncQueueWorker(new RecieveWorker(callback, address, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
   } else {
     Local<Value> argv[] = {
         Nan::Error("Not connected to port")
