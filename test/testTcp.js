@@ -104,7 +104,13 @@ describe('Native libmbus node-module TCP test ...', function() {
             var connectResult = mbusMaster.connect();
             console.log(new Date().toString() + ': mbus-TCP-Master Open:' + connectResult);
             if (!connectResult) server.close();
+            var emergencyTimeout = setTimeout(function() {
+                testSocket.destroy();
+                server.close();
+                done();
+            }, 20000); // Killswitch!
             expect(mbusMaster.mbusMaster.connected).to.be.true;
+            expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
             setTimeout(function() {
                 console.log(new Date().toString() + ': mbus-TCP-Master Send "Get 1"');
 
@@ -114,6 +120,7 @@ describe('Native libmbus node-module TCP test ...', function() {
                     expect(err).to.be.null;
                     expect(data.SlaveInformation.Id).to.be.equal(11490378);
                     expect(data.DataRecord[0].Value).to.be.equal(11490378);
+                    expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
                     mbusMaster.getData(2, function(err, data) {
                         console.log(new Date().toString() + ': mbus-TCP-Master err: ' + err);
@@ -121,6 +128,7 @@ describe('Native libmbus node-module TCP test ...', function() {
                         expect(err).to.be.null;
                         expect(data.SlaveInformation.Id).to.be.equal(5000244);
                         expect(data.DataRecord[0].Value).to.be.equal(1252);
+                        expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
                         mbusMaster.scanSecondary(function(err, data) {
                             console.log(new Date().toString() + ': mbus-TCP-Master err: ' + err);
@@ -129,6 +137,7 @@ describe('Native libmbus node-module TCP test ...', function() {
                             expect(data).to.be.an('array');
                             expect(data.length).to.be.equal(1);
                             expect(data[0]).to.be.equal('17834320B4090107');
+                            expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
                             setTimeout(function() {
                                 console.log(new Date().toString() + ': mbus-TCP-Master Close: ' + mbusMaster.close());
@@ -138,11 +147,15 @@ describe('Native libmbus node-module TCP test ...', function() {
                                 });
                             }, 1000);
                         });
+                        expect(mbusMaster.mbusMaster.communicationInProgress).to.be.true;
+                        expect(mbusMaster.close()).to.be.false;
+                        mbusMaster.getData(3, function(err, data) {
+                            expect(err.message).to.be.equal('Communication already in progress');
+                        });
                     });
                 });
+                expect(mbusMaster.mbusMaster.communicationInProgress).to.be.true;
             }, 2000);
-            //socat tcp-l:54321,reuseaddr,fork file:/dev/ttyS0,nonblock,waitlock=/var/run/ttyS0.lock,b2400
-
         });
 
         server.listen(port, '127.0.0.1');
