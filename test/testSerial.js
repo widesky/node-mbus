@@ -178,6 +178,13 @@ describe('Native libmbus node-module Serial test ...', function() {
                                     }, 1000);
                                 }, 1000);
                             });
+                            setTimeout(function() {
+                                expect(mbusMaster.close()).to.be.false;
+                                mbusMaster.getData(3, function(err, data) {
+                                    expect(err).to.be.an('object');
+                                    expect(err.message).to.be.equal('Communication already in progress');
+                                });
+                            }, 100);
                         });
                     });
                 }, 2000);
