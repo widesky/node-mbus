@@ -48,7 +48,7 @@ mbusMaster.getData(1, function(err, data) {
 Constructor to initialize the MBusMaster instance to interact with the devices.
 In the options object you set the communication and other parameter for the library:
 * *host*/*port*/*timeout*: For TCP communication you set the *host* and the *port* to connect to. Both parameters are mandatory. By setting the optional *timeout* in ms you can overwrite the default timeout (4000ms)
-* *serialPort*/*serialBaudRate*: For Serial communication you set the *serialPort* (e.g. /dev/ttyUSB0) and optionally the *serialBaudRate* to connect. Default Baudrate is 2400baut if option is missing
+* *serialPort*/*serialBaudRate*: For Serial communication you set the *serialPort* (e.g. /dev/ttyUSB0) and optionally the *serialBaudRate* to connect. Default Baudrate is 2400baud if option is missing
 * *autoConnect*: set to "true" if connection should be established automatically when needed - else you need to call "connect()" before you can communicate with the devices.
 
 ### connect(callback)
@@ -60,10 +60,12 @@ The method will return true/false when no callback is provided.
 Call this method to close the TCP/Serial connections.
 The optional callback will be called with an *error* parameter that is *null* on success.
 The method will return true/false when no callback is provided.
+When you try to close the connection while communication is in progress you will get false as result/callback with error.
 
 ### getData(address, callback)
 This method is requesting "Class 2 Data" from the device with the given *address*.
 The callback is called with an *error* and *data* parameter. When data are received successfully the *data* parameter contains the data object.
+When you try to read data while communication is in progress your callback is called with an error.
 
 Data example:
 ```
@@ -156,7 +158,9 @@ Data example:
 ### scanSecondary(callback)
 This method scans for secondary IDs (?!) and returns an array with the found IDs.
 The callback is called with an *error* and *scanResult* parameter. The scan result is returned in the *scanResult* parameter as Array with the found IDs. If no IDs are found the Array is empty.
-The secondary scan can take a while, so > 60 seconds is very normal, with default timeout settings it's minimum 80 seconds! When there are ID collisions and scan needs to get a level deeper then it can take even longer.
+When you try to read data while communication is in progress your callback is called with an error.
+
+**Note:** The secondary scan can take a while, so > 5-100 seconds is normal depending on the used timeouts! When there are ID collisions and scan needs to get a level deeper then it can take even longer.
 So just know that it can take very long :-)
 
 ## Todo
