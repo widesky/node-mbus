@@ -221,8 +221,8 @@ static int init_slaves(mbus_handle *handle)
 
 class RecieveWorker : public Nan::AsyncWorker {
  public:
-  RecieveWorker(Nan::Callback *callback,char *addr_str,uv_rwlock_t *lock, mbus_handle *handle)
-    : Nan::AsyncWorker(callback), addr_str(addr_str), lock(lock), handle(handle) {}
+  RecieveWorker(Nan::Callback *callback,char *addr_str,uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
+    : Nan::AsyncWorker(callback), addr_str(addr_str), lock(lock), handle(handle), communicationInProgress(communicationInProgress) {}
   ~RecieveWorker() {
     free(addr_str);
   }
@@ -344,9 +344,7 @@ class RecieveWorker : public Nan::AsyncWorker {
   void HandleOKCallback () {
     Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
-
-    obj->communicationInProgress = false;
+    communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -359,9 +357,7 @@ class RecieveWorker : public Nan::AsyncWorker {
   void HandleErrorCallback () {
     Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
-
-    obj->communicationInProgress = false;
+    communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
@@ -374,6 +370,7 @@ class RecieveWorker : public Nan::AsyncWorker {
     char *addr_str;
     uv_rwlock_t *lock;
     mbus_handle *handle;
+    bool *communicationInProgress;
 };
 
 NAN_METHOD(MbusMaster::Get) {
@@ -386,7 +383,7 @@ NAN_METHOD(MbusMaster::Get) {
   if(obj->connected) {
     obj->communicationInProgress = true;
 
-    Nan::AsyncQueueWorker(new RecieveWorker(callback, address, &(obj->queueLock), obj->handle));
+    Nan::AsyncQueueWorker(new RecieveWorker(callback, address, &(obj->queueLock), obj->handle, &(objs->communicationInProgress)));
   } else {
     Local<Value> argv[] = {
         Nan::Error("Not connected to port")
@@ -398,8 +395,8 @@ NAN_METHOD(MbusMaster::Get) {
 
 class ScanSecondaryWorker : public Nan::AsyncWorker {
  public:
-  ScanSecondaryWorker(Nan::Callback *callback,uv_rwlock_t *lock, mbus_handle *handle)
-    : Nan::AsyncWorker(callback), lock(lock), handle(handle) {}
+  ScanSecondaryWorker(Nan::Callback *callback,uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
+    : Nan::AsyncWorker(callback), lock(lock), handle(handle), communicationInProgress(communicationInProgress) {}
   ~ScanSecondaryWorker() {
   }
 
@@ -491,9 +488,8 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
   // so it is safe to use V8 again
   void HandleOKCallback () {
     Nan::HandleScope scope;
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
-    obj->communicationInProgress = false;
+    communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -506,9 +502,7 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
   void HandleErrorCallback () {
     Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
-
-    obj->communicationInProgress = false;
+    communicationInProgress = false;
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
@@ -519,6 +513,7 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
     char *data;
     uv_rwlock_t *lock;
     mbus_handle *handle;
+    bool *communicationInProgress;
 };
 
 NAN_METHOD(MbusMaster::ScanSecondary) {
@@ -530,7 +525,7 @@ NAN_METHOD(MbusMaster::ScanSecondary) {
   if(obj->connected) {
     obj->communicationInProgress = true;
 
-    Nan::AsyncQueueWorker(new ScanSecondaryWorker(callback, &(obj->queueLock), obj->handle));
+    Nan::AsyncQueueWorker(new ScanSecondaryWorker(callback, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
   } else {
     Local<Value> argv[] = {
         Nan::Error("Not connected to port")
