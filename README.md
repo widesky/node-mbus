@@ -169,13 +169,16 @@ When you try to read data while communication is in progress your callback is ca
 
 ## MBust-Master Devices reported as working
 * Aliexpress USB MBus Master (https://m.de.aliexpress.com/item/32755430755.html?trace=wwwdetail2mobilesitedetail&productId=32755430755&productSubject=MBUS-to-USB-master-module-MBUS-device-debugging-dedicated-no-power-supply)
-*
+
 
 ## Todo
 * Also build the libmbus binaries and tools? (if needed)
 * real life tests
 
 ## Changelog
+
+### v0.5.x (2018.03.26)
+* add method to set a new Primary ID for a device
 
 ### v0.4.x (2018.03.25)
 * library now tries to make sure that only one request/scan runs and also connect/close should be secured
