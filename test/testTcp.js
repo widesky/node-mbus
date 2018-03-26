@@ -80,7 +80,7 @@ describe('Native libmbus node-module TCP test ...', function() {
                     sendMessage(socket, sendBuf);
                 }
                 else if (hexData.substring(0, 20) === '68060668530151017a03') {
-                    console.log(new Date().toString() + ':     mbus-Serial-Device: Request for ID CHange 1->3');
+                    console.log(new Date().toString() + ':     mbus-Serial-Device: Request for ID Change 1 -> 3');
                     sendBuf = Buffer.from('E5', 'hex');
                     sendMessage(socket, sendBuf);
                 }

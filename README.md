@@ -163,6 +163,10 @@ When you try to read data while communication is in progress your callback is ca
 **Note:** The secondary scan can take a while, so > 5-100 seconds is normal depending on the used timeouts! When there are ID collisions and scan needs to get a level deeper then it can take even longer.
 So just know that it can take very long :-)
 
+### setPrimaryId(oldAddress, newAddress, callback)
+This method allows you to set a new primary ID for a device. You can use any primary (Number, 0..250) or secondary (string, 16 characters long) address as *oldAddress*. The *newAddress* must be a primary address as Number 0..250. The callback will be called with an empty *error* parameter on success or an Error object on failure.
+When you try to read data while communication is in progress your callback is called with an error.
+
 ## Todo
 * Also build the libmbus binaries and tools? (if needed)
 * real life tests

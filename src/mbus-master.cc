@@ -703,7 +703,6 @@ public:
         Local<Value> argv[] = {
             Nan::Null()
         };
-        free(data);
         callback->Call(1, argv);
     };
 
@@ -719,7 +718,6 @@ public:
         callback->Call(1, argv);
     }
 private:
-    char *data;
     char *old_addr_str;
     int new_address;
     uv_rwlock_t *lock;
