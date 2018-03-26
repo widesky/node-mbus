@@ -167,6 +167,10 @@ So just know that it can take very long :-)
 This method allows you to set a new primary ID for a device. You can use any primary (Number, 0..250) or secondary (string, 16 characters long) address as *oldAddress*. The *newAddress* must be a primary address as Number 0..250. The callback will be called with an empty *error* parameter on success or an Error object on failure.
 When you try to read data while communication is in progress your callback is called with an error.
 
+## MBust-Master Devices reported as working
+* Aliexpress USB MBus Master (https://m.de.aliexpress.com/item/32755430755.html?trace=wwwdetail2mobilesitedetail&productId=32755430755&productSubject=MBUS-to-USB-master-module-MBUS-device-debugging-dedicated-no-power-supply)
+*
+
 ## Todo
 * Also build the libmbus binaries and tools? (if needed)
 * real life tests
