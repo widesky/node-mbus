@@ -74,8 +74,9 @@ MbusMaster.prototype.close = function close(callback, wait) {
             }
             return false;
         }
+        var self = this;
         setTimeout(function() {
-            this.close(callback, wait);
+            self.close(callback, wait);
         }, 500);
         return undefined;
     }
