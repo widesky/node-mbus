@@ -82,6 +82,11 @@ describe('Native libmbus node-module Serial test ...', function() {
                     sendBuf = Buffer.from('6815156808017220438317b40901072b0000000c13180000009f16', 'hex');
                     sendMessage(socket, sendBuf);
                 }
+                else if (hexData.substring(0, 20) === '68060668530151017A03') {
+                    console.log(new Date().toString() + ':     mbus-Serial-Device: Request for ID CHange 1->3');
+                    sendBuf = Buffer.from('E5', 'hex');
+                    sendMessage(socket, sendBuf);
+                }
                 lastMessage = hexData;
             });
             socket.on('error', function (err) {
