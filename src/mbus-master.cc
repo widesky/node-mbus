@@ -107,6 +107,7 @@ NAN_METHOD(MbusMaster::OpenTCP) {
       return;
     }
     obj->connected = true;
+    obj->communicationInProgress = false;
     info.GetReturnValue().Set(Nan::True());
     return;
   }
@@ -182,6 +183,7 @@ NAN_METHOD(MbusMaster::OpenSerial) {
     }
 //    #endif
     obj->connected = true;
+    obj->communicationInProgress = false;
     info.GetReturnValue().Set(Nan::True());
     return;
   }
@@ -203,6 +205,7 @@ NAN_METHOD(MbusMaster::Close) {
     mbus_context_free(obj->handle);
     obj->handle = NULL;
     obj->connected = false;
+    obj->communicationInProgress = false;
     info.GetReturnValue().Set(Nan::True());
   }
   else {
