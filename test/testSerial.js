@@ -166,33 +166,39 @@ describe('Native libmbus node-module Serial test ...', function() {
                             expect(data.DataRecord[0].Value).to.be.equal(1252);
                             expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
-                            mbusMaster.scanSecondary(function(err, data) {
+                            mbusMaster.setPrimaryId(1, 2, function(err) {
                                 console.log(new Date().toString() + ': mbus-Serial-Master err: ' + err);
-                                console.log(new Date().toString() + ': mbus-Serial-Master data: ' + JSON.stringify(data, null, 2));
                                 expect(err).to.be.null;
-                                expect(data).to.be.an('array');
-                                expect(data.length).to.be.equal(1);
-                                expect(data[0]).to.be.equal('17834320B4090107');
                                 expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
-                                if (emergencyTimeout) clearTimeout(emergencyTimeout);
-                                setTimeout(function() {
-                                    console.log(new Date().toString() + ': mbus-Serial-Master Close: ' + mbusMaster.close());
-                                    socat.kill('SIGKILL');
-                                    console.log('mbus-Serial-Device: Socat killed');
+                                mbusMaster.scanSecondary(function(err, data) {
+                                    console.log(new Date().toString() + ': mbus-Serial-Master err: ' + err);
+                                    console.log(new Date().toString() + ': mbus-Serial-Master data: ' + JSON.stringify(data, null, 2));
+                                    expect(err).to.be.null;
+                                    expect(data).to.be.an('array');
+                                    expect(data.length).to.be.equal(1);
+                                    expect(data[0]).to.be.equal('17834320B4090107');
+                                    expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
+
+                                    if (emergencyTimeout) clearTimeout(emergencyTimeout);
                                     setTimeout(function() {
-                                        server.close(function(err) {
-                                            testSocket.destroy();
-                                            console.log('mbus-Serial-Device: Server closed');
-                                            setTimeout(done, 2000);
-                                        });
+                                        console.log(new Date().toString() + ': mbus-Serial-Master Close: ' + mbusMaster.close());
+                                        socat.kill('SIGKILL');
+                                        console.log('mbus-Serial-Device: Socat killed');
+                                        setTimeout(function() {
+                                            server.close(function(err) {
+                                                testSocket.destroy();
+                                                console.log('mbus-Serial-Device: Server closed');
+                                                setTimeout(done, 2000);
+                                            });
+                                        }, 1000);
                                     }, 1000);
-                                }, 1000);
-                            });
-                            expect(mbusMaster.mbusMaster.communicationInProgress).to.be.true;
-                            expect(mbusMaster.close()).to.be.false;
-                            mbusMaster.getData(3, function(err, data) {
-                                expect(err.message).to.be.equal('Communication already in progress');
+                                });
+                                expect(mbusMaster.mbusMaster.communicationInProgress).to.be.true;
+                                expect(mbusMaster.close()).to.be.false;
+                                mbusMaster.getData(3, function(err, data) {
+                                    expect(err.message).to.be.equal('Communication already in progress');
+                                });
                             });
                         });
                     });
