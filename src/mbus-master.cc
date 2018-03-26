@@ -162,6 +162,7 @@ NAN_METHOD(MbusMaster::OpenSerial) {
       break;
   }
 
+  obj->communicationInProgress = false;
   if(!obj->connected) {
     obj->serial = true;
     if (!(obj->handle = mbus_context_serial(port)))
@@ -181,7 +182,6 @@ NAN_METHOD(MbusMaster::OpenSerial) {
       MBUS_ERROR("%s: OpenSerial finished error 2\n", __PRETTY_FUNCTION__);
       return;
     }
-//    #ifndef USE_VIRTUAL_SERIALPORT
 //    MBUS_ERROR("%s: BAUDRATE SET\n", __PRETTY_FUNCTION__);
     if (mbus_serial_set_baudrate(obj->handle, boudrate) == -1)
     {
@@ -193,7 +193,6 @@ NAN_METHOD(MbusMaster::OpenSerial) {
         MBUS_ERROR("%s: OpenSerial finished error 3\n", __PRETTY_FUNCTION__);
         return;
     }
-//    #endif
     obj->connected = true;
     obj->communicationInProgress = false;
     //MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
@@ -279,8 +278,8 @@ class RecieveWorker : public Nan::AsyncWorker {
 
     if (init_slaves(handle) == 0)
     {
-        mbus_disconnect(handle);
-        mbus_context_free(handle);
+//        mbus_disconnect(handle);
+//        mbus_context_free(handle);
         sprintf(error, "Failed to init slaves.");
         SetErrorMessage(error);
         uv_rwlock_wrunlock(lock);
