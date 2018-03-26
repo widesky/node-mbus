@@ -19,6 +19,7 @@ MbusMaster::MbusMaster() {
   connected = false;
   serial = true;
   communicationInProgress = false;
+  MBUS_ERROR("%s: Set communicationInProgress to false Constructor\n", __PRETTY_FUNCTION__);
   handle = NULL;
   uv_rwlock_init(&queueLock);
 }
@@ -108,6 +109,7 @@ NAN_METHOD(MbusMaster::OpenTCP) {
     }
     obj->connected = true;
     obj->communicationInProgress = false;
+    MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
     info.GetReturnValue().Set(Nan::True());
     return;
   }
@@ -184,6 +186,7 @@ NAN_METHOD(MbusMaster::OpenSerial) {
 //    #endif
     obj->connected = true;
     obj->communicationInProgress = false;
+    MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
     info.GetReturnValue().Set(Nan::True());
     return;
   }
@@ -196,6 +199,7 @@ NAN_METHOD(MbusMaster::Close) {
   MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
   if(obj->communicationInProgress) {
+      MBUS_ERROR("%s: communicationInProgress is tsill true on Close!!\n", __PRETTY_FUNCTION__);
     info.GetReturnValue().Set(Nan::False());
     return;
   }
@@ -206,6 +210,7 @@ NAN_METHOD(MbusMaster::Close) {
     obj->handle = NULL;
     obj->connected = false;
     obj->communicationInProgress = false;
+    MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
     info.GetReturnValue().Set(Nan::True());
   }
   else {
@@ -355,6 +360,7 @@ class RecieveWorker : public Nan::AsyncWorker {
     Nan::HandleScope scope;
 
     *communicationInProgress = false;
+    MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -368,6 +374,7 @@ class RecieveWorker : public Nan::AsyncWorker {
     Nan::HandleScope scope;
 
     *communicationInProgress = false;
+    MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
@@ -392,6 +399,7 @@ NAN_METHOD(MbusMaster::Get) {
   Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
   if(obj->connected) {
     obj->communicationInProgress = true;
+    MBUS_ERROR("%s: Set communicationInProgress to true\n", __PRETTY_FUNCTION__);
 
     Nan::AsyncQueueWorker(new RecieveWorker(callback, address, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
   } else {
@@ -500,6 +508,7 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
     Nan::HandleScope scope;
 
     *communicationInProgress = false;
+    MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -513,6 +522,7 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
     Nan::HandleScope scope;
 
     *communicationInProgress = false;
+    MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
@@ -534,6 +544,7 @@ NAN_METHOD(MbusMaster::ScanSecondary) {
   Nan::Callback *callback = new Nan::Callback(info[0].As<Function>());
   if(obj->connected) {
     obj->communicationInProgress = true;
+    MBUS_ERROR("%s: Set communicationInProgress to true\n", __PRETTY_FUNCTION__);
 
     Nan::AsyncQueueWorker(new ScanSecondaryWorker(callback, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
   } else {

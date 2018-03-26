@@ -132,7 +132,7 @@ MbusMaster.prototype.getData = function getData(address, callback) {
                 });
                 return;
             }
-            if (callback) callback(err, data);
+            if (callback) callback(new Error(err), data);
         });
     });
 };
@@ -159,12 +159,12 @@ MbusMaster.prototype.scanSecondary = function scanSecondary(callback) {
                         data = JSON.parse(data);
                     }
                     catch (e) {
-                        err = e + ': ' + data;
+                        err = new Error(e + ': ' + data);
                         data = null;
                     }
                 }
             }
-            if (callback) callback(err, data);
+            if (callback) callback(new Error(err), data);
         });
     });
 };
