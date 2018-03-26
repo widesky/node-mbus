@@ -3,14 +3,14 @@
 #include <cstring>
 
 char *get(v8::Handle<v8::Value> value, const char *fallback) {
-	Nan::HandleScope scope;
-    
-	char *str;
+    Nan::HandleScope scope;
+
+    char *str;
     if (value->IsString()) {
         Nan::Utf8String string(value);
         str = strdup(*string);
     } else {
- 	   str = strdup(fallback);
-	}
+        str = strdup(fallback);
+    }
     return str;
 }
