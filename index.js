@@ -62,6 +62,10 @@ MbusMaster.prototype.connect = function connect(callback) {
 };
 
 MbusMaster.prototype.close = function close(callback, wait) {
+    if (wait === undefined) {
+        if (callback) wait = true;
+            else wait = false;
+    }
     if (wait && !callback) wait = false;
     if (this.mbusMaster.connected && this.mbusMaster.communicationInProgress) {
         if (!wait) {

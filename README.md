@@ -60,7 +60,7 @@ The method will return true/false when no callback is provided.
 Call this method to close the TCP/Serial connections.
 The optional callback will be called with an *error* parameter that is *null* on success.
 The method will return true/false when no callback is provided.
-When you try to close the connection while communication is in progress you will get false as result/callback with error when *waitTillClosed* is not set or false. When you set *waitTillClosed* to true and use a callback the library waits till the current communication is finished (will be checked any 500ms) and calls the callback then after a successful close.
+When you have provided a callback and you try to close the connection while communication is in progress the method will wait till communication has finished (checked every 500ms), then close the connection and then call the callback. When not using a callback then you get false as result in this case. When you set *waitTillClosed* while using a callback the callback will be called with an error if communication is still ongoing.
 
 ### getData(address, callback)
 This method is requesting "Class 2 Data" from the device with the given *address*.
