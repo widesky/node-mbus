@@ -166,7 +166,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                             expect(data.DataRecord[0].Value).to.be.equal(1252);
                             expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
-                            mbusMaster.setPrimaryId(1, 2, function(err) {
+                            mbusMaster.setPrimaryId(1, 3, function(err) {
                                 console.log(new Date().toString() + ': mbus-Serial-Master err: ' + err);
                                 expect(err).to.be.null;
                                 expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
