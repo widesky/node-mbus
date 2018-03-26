@@ -3,8 +3,6 @@
 
 #ifdef _WIN32
 #define __PRETTY_FUNCTION__ __FUNCSIG__
-//#include <stdlib.h>
-//#include <io.h>
 #else
 #include <unistd.h>
 #endif
@@ -19,10 +17,8 @@ MbusMaster::MbusMaster() {
   connected = false;
   serial = true;
   communicationInProgress = false;
-  //MBUS_ERROR("%s: Set communicationInProgress to false Constructor\n", __PRETTY_FUNCTION__);
   handle = NULL;
   uv_rwlock_init(&queueLock);
-  MBUS_ERROR("%s: Constructor finished\n", __PRETTY_FUNCTION__);
 }
 
 MbusMaster::~MbusMaster(){
@@ -33,7 +29,6 @@ MbusMaster::~MbusMaster(){
     mbus_context_free(handle);
     handle = NULL;
   }
-  MBUS_ERROR("%s: Destructor finished\n", __PRETTY_FUNCTION__);
   uv_rwlock_destroy(&queueLock);
 }
 
@@ -58,7 +53,6 @@ NAN_MODULE_INIT(MbusMaster::Init) {
   Nan::SetPrototypeMethod(ctor, "scan", ScanSecondary);
 
   target->Set(Nan::New("MbusMaster").ToLocalChecked(), ctor->GetFunction());
-  MBUS_ERROR("%s: Init finished\n", __PRETTY_FUNCTION__);
 }
 
 NAN_METHOD(MbusMaster::New) {
@@ -73,7 +67,6 @@ NAN_METHOD(MbusMaster::New) {
   MbusMaster* obj = new MbusMaster();
   obj->Wrap(info.Holder());
   info.GetReturnValue().Set(info.Holder());
-  MBUS_ERROR("%s: New finished\n", __PRETTY_FUNCTION__);
 }
 
 NAN_METHOD(MbusMaster::OpenTCP) {
@@ -96,7 +89,6 @@ NAN_METHOD(MbusMaster::OpenTCP) {
     {
         free(host);
         info.GetReturnValue().Set(Nan::False());
-        MBUS_ERROR("%s: OpenTcp finished error 1\n", __PRETTY_FUNCTION__);
         return;
     }
     free(host);
@@ -110,14 +102,11 @@ NAN_METHOD(MbusMaster::OpenTCP) {
       mbus_context_free(obj->handle);
       obj->handle = NULL;
       info.GetReturnValue().Set(Nan::False());
-      MBUS_ERROR("%s: OpenTcp finished error 2\n", __PRETTY_FUNCTION__);
       return;
     }
     obj->connected = true;
     obj->communicationInProgress = false;
-    //MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
     info.GetReturnValue().Set(Nan::True());
-    MBUS_ERROR("%s: OpenTcp finished successfully\n", __PRETTY_FUNCTION__);
     return;
   }
   info.GetReturnValue().Set(Nan::False());
@@ -165,39 +154,35 @@ NAN_METHOD(MbusMaster::OpenSerial) {
   obj->communicationInProgress = false;
   if(!obj->connected) {
     obj->serial = true;
+
     if (!(obj->handle = mbus_context_serial(port)))
     {
         free(port);
         info.GetReturnValue().Set(Nan::False());
-        MBUS_ERROR("%s: OpenSerial finished error 1\n", __PRETTY_FUNCTION__);
         return;
     }
     free(port);
+
     if (mbus_connect(obj->handle) == -1)
     {
       mbus_context_free(obj->handle);
       obj->handle = NULL;
       info.GetReturnValue().Set(Nan::False());
-      //MBUS_ERROR("%s: Unable to connect.\n", __PRETTY_FUNCTION__);
-      MBUS_ERROR("%s: OpenSerial finished error 2\n", __PRETTY_FUNCTION__);
       return;
     }
-//    MBUS_ERROR("%s: BAUDRATE SET\n", __PRETTY_FUNCTION__);
+
     if (mbus_serial_set_baudrate(obj->handle, boudrate) == -1)
     {
         mbus_disconnect(obj->handle);
         mbus_context_free(obj->handle);
         obj->handle = NULL;
         info.GetReturnValue().Set(Nan::False());
-        //MBUS_ERROR("%s: Unable to set baudrate.\n", __PRETTY_FUNCTION__);
-        MBUS_ERROR("%s: OpenSerial finished error 3\n", __PRETTY_FUNCTION__);
         return;
     }
+
     obj->connected = true;
     obj->communicationInProgress = false;
-    //MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
     info.GetReturnValue().Set(Nan::True());
-    MBUS_ERROR("%s: OpenSerial finished successfully\n", __PRETTY_FUNCTION__);
     return;
   }
   info.GetReturnValue().Set(Nan::False());
@@ -209,27 +194,20 @@ NAN_METHOD(MbusMaster::Close) {
   MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
   if(obj->communicationInProgress) {
-    //MBUS_ERROR("%s: communicationInProgress is tsill true on Close!!\n", __PRETTY_FUNCTION__);
     info.GetReturnValue().Set(Nan::False());
-    MBUS_ERROR("%s: Close finished error 1\n", __PRETTY_FUNCTION__);
     return;
   }
 
   if(obj->connected) {
-    MBUS_ERROR("%s: Close before disconnect\n", __PRETTY_FUNCTION__);
     mbus_disconnect(obj->handle);
-    MBUS_ERROR("%s: Close before free\n", __PRETTY_FUNCTION__);
     mbus_context_free(obj->handle);
     obj->handle = NULL;
     obj->connected = false;
     obj->communicationInProgress = false;
-    //MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
     info.GetReturnValue().Set(Nan::True());
-    MBUS_ERROR("%s: Close finished successfully\n", __PRETTY_FUNCTION__);
   }
   else {
       info.GetReturnValue().Set(Nan::False());
-      MBUS_ERROR("%s: Close finished error 2\n", __PRETTY_FUNCTION__);
   }
 }
 
@@ -238,17 +216,14 @@ static int init_slaves(mbus_handle *handle)
 
     if (mbus_send_ping_frame(handle, MBUS_ADDRESS_NETWORK_LAYER, 1) == -1)
     {
-        MBUS_ERROR("%s: initslaves finished error 1\n", __PRETTY_FUNCTION__);
         return 0;
     }
 
     if (mbus_send_ping_frame(handle, MBUS_ADDRESS_NETWORK_LAYER, 1) == -1)
     {
-        MBUS_ERROR("%s: initslaves finished error 2\n", __PRETTY_FUNCTION__);
         return 0;
     }
 
-    MBUS_ERROR("%s: initslaves finished successfully\n", __PRETTY_FUNCTION__);
     return 1;
 }
 
@@ -267,7 +242,6 @@ class RecieveWorker : public Nan::AsyncWorker {
   void Execute () {
     uv_rwlock_wrlock(lock);
 
-    MBUS_ERROR("%s: Read start Execute\n", __PRETTY_FUNCTION__);
     mbus_frame reply;
     mbus_frame_data reply_data;
     char error[100];
@@ -278,8 +252,6 @@ class RecieveWorker : public Nan::AsyncWorker {
 
     if (init_slaves(handle) == 0)
     {
-//        mbus_disconnect(handle);
-//        mbus_context_free(handle);
         sprintf(error, "Failed to init slaves.");
         SetErrorMessage(error);
         uv_rwlock_wrunlock(lock);
@@ -396,8 +368,6 @@ class RecieveWorker : public Nan::AsyncWorker {
     Nan::HandleScope scope;
 
     *communicationInProgress = false;
-    //MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
-    MBUS_ERROR("%s: HandleOKCallback\n", __PRETTY_FUNCTION__);
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -411,8 +381,6 @@ class RecieveWorker : public Nan::AsyncWorker {
     Nan::HandleScope scope;
 
     *communicationInProgress = false;
-    //MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
-    MBUS_ERROR("%s: HandleErrorCallback\n", __PRETTY_FUNCTION__);
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
@@ -437,8 +405,6 @@ NAN_METHOD(MbusMaster::Get) {
   Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
   if(obj->connected) {
     obj->communicationInProgress = true;
-    //MBUS_ERROR("%s: Set communicationInProgress to true\n", __PRETTY_FUNCTION__);
-    MBUS_ERROR("%s: Start Get\n", __PRETTY_FUNCTION__);
 
     Nan::AsyncQueueWorker(new RecieveWorker(callback, address, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
   } else {
@@ -547,7 +513,6 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
     Nan::HandleScope scope;
 
     *communicationInProgress = false;
-    //MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
 
     Local<Value> argv[] = {
         Nan::Null(),
@@ -561,7 +526,6 @@ class ScanSecondaryWorker : public Nan::AsyncWorker {
     Nan::HandleScope scope;
 
     *communicationInProgress = false;
-    //MBUS_ERROR("%s: Set communicationInProgress to false\n", __PRETTY_FUNCTION__);
 
     Local<Value> argv[] = {
         Nan::Error(ErrorMessage())
@@ -583,7 +547,6 @@ NAN_METHOD(MbusMaster::ScanSecondary) {
   Nan::Callback *callback = new Nan::Callback(info[0].As<Function>());
   if(obj->connected) {
     obj->communicationInProgress = true;
-    //MBUS_ERROR("%s: Set communicationInProgress to true\n", __PRETTY_FUNCTION__);
 
     Nan::AsyncQueueWorker(new ScanSecondaryWorker(callback, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
   } else {
