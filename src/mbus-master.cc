@@ -329,7 +329,7 @@ class RecieveWorker : public Nan::AsyncWorker {
     {
         sprintf(error, "M-bus data parse error [%s].", addr_str);
         SetErrorMessage(error);
-        mbus_frame_data_free(reply_data);
+        mbus_frame_data_free(&reply_data);
         uv_rwlock_wrunlock(lock);
         return;
     }
@@ -341,12 +341,12 @@ class RecieveWorker : public Nan::AsyncWorker {
     {
         sprintf(error, "Failed to generate XML representation of MBUS frame [%s].", addr_str);
         SetErrorMessage(error);
-        mbus_frame_data_free(reply_data);
+        mbus_frame_data_free(&reply_data);
         uv_rwlock_wrunlock(lock);
         return;
     }
 
-    mbus_frame_data_free(reply_data);
+    mbus_frame_data_free(&reply_data);
 
     uv_rwlock_wrunlock(lock);
   }
