@@ -79,6 +79,11 @@ describe('Native libmbus node-module TCP test ...', function() {
                     sendBuf = Buffer.from('6815156808017220438317b40901072b0000000c13180000009f16', 'hex');
                     sendMessage(socket, sendBuf);
                 }
+                else if (hexData.substring(0, 20) === '68060668530151017a03') {
+                    console.log(new Date().toString() + ':     mbus-Serial-Device: Request for ID CHange 1->3');
+                    sendBuf = Buffer.from('E5', 'hex');
+                    sendMessage(socket, sendBuf);
+                }
                 lastMessage = hexData;
             });
             socket.on('error', function (err) {
@@ -130,27 +135,33 @@ describe('Native libmbus node-module TCP test ...', function() {
                         expect(data.DataRecord[0].Value).to.be.equal(1252);
                         expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
-                        mbusMaster.scanSecondary(function(err, data) {
-                            console.log(new Date().toString() + ': mbus-TCP-Master err: ' + err);
-                            console.log(new Date().toString() + ': mbus-TCP-Master data: ' + JSON.stringify(data, null, 2));
+                        mbusMaster.setPrimaryId(1, 3, function(err) {
+                            console.log(new Date().toString() + ': mbus-Serial-Master err: ' + err);
                             expect(err).to.be.null;
-                            expect(data).to.be.an('array');
-                            expect(data.length).to.be.equal(1);
-                            expect(data[0]).to.be.equal('17834320B4090107');
                             expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
-                            setTimeout(function() {
-                                console.log(new Date().toString() + ': mbus-TCP-Master Close: ' + mbusMaster.close());
-                                server.close(function() {
-                                    testSocket.destroy();
-                                    done();
-                                });
-                            }, 1000);
-                        });
-                        expect(mbusMaster.mbusMaster.communicationInProgress).to.be.true;
-                        expect(mbusMaster.close()).to.be.false;
-                        mbusMaster.getData(3, function(err, data) {
-                            expect(err.message).to.be.equal('Communication already in progress');
+                            mbusMaster.scanSecondary(function(err, data) {
+                                console.log(new Date().toString() + ': mbus-TCP-Master err: ' + err);
+                                console.log(new Date().toString() + ': mbus-TCP-Master data: ' + JSON.stringify(data, null, 2));
+                                expect(err).to.be.null;
+                                expect(data).to.be.an('array');
+                                expect(data.length).to.be.equal(1);
+                                expect(data[0]).to.be.equal('17834320B4090107');
+                                expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
+
+                                setTimeout(function() {
+                                    console.log(new Date().toString() + ': mbus-TCP-Master Close: ' + mbusMaster.close());
+                                    server.close(function() {
+                                        testSocket.destroy();
+                                        done();
+                                    });
+                                }, 1000);
+                            });
+                            expect(mbusMaster.mbusMaster.communicationInProgress).to.be.true;
+                            expect(mbusMaster.close()).to.be.false;
+                            mbusMaster.getData(3, function(err, data) {
+                                expect(err.message).to.be.equal('Communication already in progress');
+                            });
                         });
                     });
                 });
