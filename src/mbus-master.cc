@@ -574,7 +574,6 @@ public:
     void Execute () {
         uv_rwlock_wrlock(lock);
 
-        mbus_handle *handle = NULL;
         mbus_frame reply;
         char error[150];
         int old_address;
