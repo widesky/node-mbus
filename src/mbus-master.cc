@@ -331,7 +331,7 @@ class RecieveWorker : public Nan::AsyncWorker {
         SetErrorMessage(error);
 
         // manual free
-        if ((reply_data.data_var != NULL) && (reply_data.data_var.record != NULL))
+        if ((reply_data.data_var) && (reply_data.data_var.record))
         {
             mbus_data_record_free(reply_data.data_var.record);
             reply_data.data_var.record = NULL;
@@ -350,7 +350,7 @@ class RecieveWorker : public Nan::AsyncWorker {
         SetErrorMessage(error);
 
         // manual free
-        if ((reply_data.data_var != NULL) && (reply_data.data_var.record != NULL))
+        if ((reply_data.data_var) && (reply_data.data_var.record))
         {
             mbus_data_record_free(reply_data.data_var.record);
             reply_data.data_var.record = NULL;
@@ -361,7 +361,7 @@ class RecieveWorker : public Nan::AsyncWorker {
     }
 
     // manual free
-    if ((reply_data.data_var != NULL) && (reply_data.data_var.record != NULL))
+    if ((reply_data.data_var) && (reply_data.data_var.record))
     {
         mbus_data_record_free(reply_data.data_var.record);
         reply_data.data_var.record = NULL;
