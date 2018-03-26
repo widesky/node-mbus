@@ -51,6 +51,7 @@ NAN_MODULE_INIT(MbusMaster::Init) {
     Nan::SetPrototypeMethod(ctor, "close", Close);
     Nan::SetPrototypeMethod(ctor, "get", Get);
     Nan::SetPrototypeMethod(ctor, "scan", ScanSecondary);
+    Nan::SetPrototypeMethod(ctor, "setPrimaryId", SetPrimaryId);
 
     target->Set(Nan::New("MbusMaster").ToLocalChecked(), ctor->GetFunction());
 }
@@ -557,6 +558,197 @@ NAN_METHOD(MbusMaster::ScanSecondary) {
     }
     info.GetReturnValue().SetUndefined();
 }
+
+class SetPrimaryWorker : public Nan::AsyncWorker {
+public:
+    SetPrimaryWorker(Nan::Callback *callback, char *old_addr_str, int new_address, uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
+    : Nan::AsyncWorker(callback), old_addr_str(old_addr_str), new_address(new_address), lock(lock), handle(handle), communicationInProgress(communicationInProgress) {}
+    ~SetPrimaryWorker() {
+        free(old_addr_str);
+    }
+
+    // Executed inside the worker-thread.
+    // It is not safe to access V8, or V8 data structures
+    // here, so everything we need for input and output
+    // should go on `this`.
+    void Execute () {
+        uv_rwlock_wrlock(lock);
+
+        mbus_handle *handle = NULL;
+        mbus_frame reply;
+        char error[150];
+        int old_address;
+        int ret;
+
+        if (mbus_is_primary_address(new_address) == 0)
+        {
+            sprintf(error, "Invalid new primary address");
+            SetErrorMessage(error);
+            uv_rwlock_wrunlock(lock);
+            return;
+        }
+
+        switch (new_address)
+        {
+            case MBUS_ADDRESS_NETWORK_LAYER:
+            case MBUS_ADDRESS_BROADCAST_REPLY:
+            case MBUS_ADDRESS_BROADCAST_NOREPLY:
+                sprintf(error, "Invalid new primary address");
+                SetErrorMessage(error);
+                uv_rwlock_wrunlock(lock);
+                return;
+        }
+
+        if (init_slaves(handle) == 0)
+        {
+            sprintf(error, "Failed to init slaves.");
+            SetErrorMessage(error);
+            uv_rwlock_wrunlock(lock);
+            return;
+        }
+
+        if (mbus_send_ping_frame(handle, new_address, 0) == -1)
+        {
+            sprintf(error, "Verification failed. Could not send ping frame: %s", mbus_error_str());
+            SetErrorMessage(error);
+            uv_rwlock_wrunlock(lock);
+            return;
+        }
+
+        if (mbus_recv_frame(handle, &reply) != MBUS_RECV_RESULT_TIMEOUT)
+        {
+            sprintf(error, "Verification failed. Got a response from new address");
+            SetErrorMessage(error);
+            uv_rwlock_wrunlock(lock);
+            return;
+        }
+
+        if (mbus_is_secondary_address(old_addr_str))
+        {
+            // secondary addressing
+
+            ret = mbus_select_secondary_address(handle, old_addr_str);
+
+            if (ret == MBUS_PROBE_COLLISION)
+            {
+                sprintf(error, "The address mask [%s] matches more than one device.", old_addr_str);
+                SetErrorMessage(error);
+                uv_rwlock_wrunlock(lock);
+                return;
+            }
+            else if (ret == MBUS_PROBE_NOTHING)
+            {
+                sprintf(error, "The selected secondary address does not match any device [%s].", old_addr_str);
+                SetErrorMessage(error);
+                uv_rwlock_wrunlock(lock);
+                return;
+            }
+            else if (ret == MBUS_PROBE_ERROR)
+            {
+                sprintf(error, "Failed to select secondary address [%s].", old_addr_str);
+                SetErrorMessage(error);
+                uv_rwlock_wrunlock(lock);
+                return;
+            }
+
+            old_address = MBUS_ADDRESS_NETWORK_LAYER;
+        }
+        else
+        {
+            // primary addressing
+            old_address = atoi(old_addr_str);
+        }
+
+        if (mbus_set_primary_address(handle, old_address, new_address) == -1)
+        {
+            sprintf(error, "Failed to send set primary address frame: %s", mbus_error_str());
+            SetErrorMessage(error);
+            uv_rwlock_wrunlock(lock);
+            return;
+        }
+
+        memset(&reply, 0, sizeof(mbus_frame));
+        ret = mbus_recv_frame(handle, &reply);
+
+        if (ret == MBUS_RECV_RESULT_TIMEOUT)
+        {
+            sprintf(error, "No reply from device");
+            SetErrorMessage(error);
+            uv_rwlock_wrunlock(lock);
+            return;
+        }
+        else if (mbus_frame_type(&reply) != MBUS_FRAME_TYPE_ACK)
+        {
+            sprintf(error, "Unknown reply from Device (%d)", mbus_frame_type(&reply));
+            //mbus_frame_print(&reply);
+            SetErrorMessage(error);
+            uv_rwlock_wrunlock(lock);
+            return;
+        }
+        else
+        {
+            //printf("Set primary address of device to %d", new_address);
+            // Success
+        }
+        uv_rwlock_wrunlock(lock);
+    }
+
+    // Executed when the async work is complete
+    // this function will be run inside the main event loop
+    // so it is safe to use V8 again
+    void HandleOKCallback () {
+        Nan::HandleScope scope;
+
+        *communicationInProgress = false;
+
+        Local<Value> argv[] = {
+            Nan::Null()
+        };
+        free(data);
+        callback->Call(1, argv);
+    };
+
+    void HandleErrorCallback () {
+        Nan::HandleScope scope;
+
+        *communicationInProgress = false;
+
+        Local<Value> argv[] = {
+            Nan::Error(ErrorMessage())
+        };
+
+        callback->Call(1, argv);
+    }
+private:
+    char *data;
+    char *old_addr_str;
+    int new_address;
+    uv_rwlock_t *lock;
+    mbus_handle *handle;
+    bool *communicationInProgress;
+};
+
+NAN_METHOD(MbusMaster::SetPrimaryId) {
+    Nan::HandleScope scope;
+
+    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+
+    char *oldAddress = get(info[0]->ToString(),"0");
+    int newAddress = (int)info[1]->IntegerValue();
+    Nan::Callback *callback = new Nan::Callback(info[2].As<Function>());
+    if(obj->connected) {
+        obj->communicationInProgress = true;
+
+        Nan::AsyncQueueWorker(new SetPrimaryWorker(callback, oldAddress, newAddress, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
+    } else {
+        Local<Value> argv[] = {
+            Nan::Error("Not connected to port")
+        };
+        callback->Call(1, argv);
+    }
+    info.GetReturnValue().SetUndefined();
+}
+
 
 NAN_GETTER(MbusMaster::HandleGetters) {
     MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());

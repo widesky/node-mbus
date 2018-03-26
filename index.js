@@ -176,4 +176,28 @@ MbusMaster.prototype.scanSecondary = function scanSecondary(callback) {
     });
 };
 
+MbusMaster.prototype.setPrimaryId = function setPrimaryId(oldAddress, newAddress, callback) {
+    if (!this.mbusMaster.connected && !this.options.autoConnect) {
+        if (callback) callback(new Error('Not connected and autoConnect is false'));
+        return;
+    }
+
+    var self = this;
+    this.connect(function(err) {
+        if (err) {
+            if (callback) callback(err);
+            return;
+        }
+        self.mbusMaster.setPrimaryId(oldAddress, newAddress, function(err) {
+            if (err) {
+                err = new Error(err);
+            }
+            else {
+                err = null;
+            }
+            if (callback) callback(err);
+        });
+    });
+};
+
 module.exports = MbusMaster;

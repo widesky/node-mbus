@@ -1,42 +1,42 @@
 {
-  "name": "node-mbus",
-  "version": "0.4.15",
-  "description": "libmbus binding",
-  "keywords": [
-    "mbus"
-  ],
-  "main": "index.js",
-  "engines": {
-    "node": ">= 4"
-  },
-  "scripts": {
-    "prepublish":"rm -rf libmbus && git clone -b build-windows --single-branch https://github.com/Apollon77/libmbus.git libmbus && rm libmbus/.gitignore && cp config.h libmbus/config.h",
-    "build": "node-gyp build",
-    "install": "node-gyp rebuild",
-    "test": "node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec"
-  },
-  "author": {
-    "name": "Apollon77",
-    "email": "ingo@fischer-ka.de"
-  },
-  "contributors": [
-    "Semen Krivosheev <semen.krivosheev@gmail.com>",
-    "Apollon77"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Apollon77/node_mbus"
-  },
-  "license": "MIT",
-  "dependencies": {
-    "bindings": "^1.3.0",
-    "nan": "~2.9.2",
-    "xml2js": "^0.4.19"
-  },
-  "devDependencies": {
-    "mocha": "^5.0.0",
-    "chai": "^4.1.2",
-    "istanbul": "*",
-    "segfault-handler": "*"
-  }
+    "name": "node-mbus",
+    "version": "0.5.0",
+    "description": "libmbus binding",
+    "keywords": [
+        "mbus"
+    ],
+    "main": "index.js",
+    "engines": {
+        "node": ">= 4"
+    },
+    "scripts": {
+        "prepublish":"rm -rf libmbus && git clone -b build-windows --single-branch https://github.com/Apollon77/libmbus.git libmbus && rm libmbus/.gitignore && cp config.h libmbus/config.h",
+        "build": "node-gyp build",
+        "install": "node-gyp rebuild",
+        "test": "node node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec"
+    },
+    "author": {
+        "name": "Apollon77",
+        "email": "ingo@fischer-ka.de"
+    },
+    "contributors": [
+        "Semen Krivosheev <semen.krivosheev@gmail.com>",
+        "Apollon77"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/Apollon77/node_mbus"
+    },
+    "license": "MIT",
+    "dependencies": {
+        "bindings": "^1.3.0",
+        "nan": "~2.9.2",
+        "xml2js": "^0.4.19"
+    },
+    "devDependencies": {
+        "mocha": "^5.0.0",
+        "chai": "^4.1.2",
+        "istanbul": "*",
+        "segfault-handler": "*"
+    }
 }
