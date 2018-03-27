@@ -169,7 +169,7 @@ When you try to read data while communication is in progress your callback is ca
 
 ## MBust-Master Devices reported as working
 * Aliexpress USB MBus Master (https://m.de.aliexpress.com/item/32755430755.html?trace=wwwdetail2mobilesitedetail&productId=32755430755&productSubject=MBUS-to-USB-master-module-MBUS-device-debugging-dedicated-no-power-supply)
-
+* ADFWeb (https://www.adfweb.com/Home/products/mbus_gateway.asp?frompg=nav8_5)
 
 ## Todo
 * Also build the libmbus binaries and tools? (if needed)
