@@ -30,6 +30,7 @@ describe('Native libmbus node-module Serial test ...', function() {
         this.timeout(300000); // because of first install from npm
 
         var testSocket;
+        var secondaryCase = "";
         var server = net.createServer(function(socket) {
             console.log(new Date().toString() + ': mbus-Serial-Device: Connected ' + port + '!');
 
@@ -73,13 +74,40 @@ describe('Native libmbus node-module Serial test ...', function() {
                     sendMessage(socket, sendBuf);
                 }
                 else if (hexData.substring(0, 23) === '680b0b6873fd52ffffff1ff') {
-                    console.log(new Date().toString() + ':     mbus-Serial-Device: Secondary Scan found');
+                    console.log(new Date().toString() + ':     mbus-Serial-Device: Secondary Scan found (1)');
                     sendBuf = Buffer.from('E5', 'hex');
+                    secondaryCase = "1f";
+                    sendMessage(socket, sendBuf);
+                }
+                else if (hexData.substring(0, 23) === '680b0b6873fd52ffffff6ff') {
+                    console.log(new Date().toString() + ':     mbus-Serial-Device: Secondary Scan found (6-Collision)');
+                    sendBuf = Buffer.from('004400', 'hex');
+                    secondaryCase = "6f";
+                    sendMessage(socket, sendBuf);
+                }
+                else if (hexData.substring(0, 23) === '680b0b6873fd52ffffff62f') {
+                    console.log(new Date().toString() + ':     mbus-Serial-Device: Secondary Scan found (62)');
+                    sendBuf = Buffer.from('E5', 'hex');
+                    secondaryCase = "62";
+                    sendMessage(socket, sendBuf);
+                }
+                else if (hexData.substring(0, 23) === '680b0b6873fd52ffffff68f') {
+                    console.log(new Date().toString() + ':     mbus-Serial-Device: Secondary Scan found (68)');
+                    sendBuf = Buffer.from('E5', 'hex');
+                    secondaryCase = "68";
                     sendMessage(socket, sendBuf);
                 }
                 else if (hexData.substring(0, 6) === '105bfd') {
-                    console.log(new Date().toString() + ':     mbus-Serial-Device: Request for Class 2 Data ID FD');
-                    sendBuf = Buffer.from('6815156808017220438317b40901072b0000000c13180000009f16', 'hex');
+                    console.log(new Date().toString() + ':     mbus-Serial-Device: Request for Class 2 Data ID FD - ' + secondaryCase);
+                    if (secondaryCase === "62") {
+                        sendBuf = Buffer.from('681010680800725316006296150331170000000f4a16', 'hex');
+                    }
+                    else if (secondaryCase === "68") {
+                        sendBuf = Buffer.from('681111680802726447026896151f1b2a000000000faf16', 'hex');
+                    }
+                    else {
+                        sendBuf = Buffer.from('6815156808017220438317b40901072b0000000c13180000009f16', 'hex');
+                    }
                     sendMessage(socket, sendBuf);
                 }
                 else if (hexData.substring(0, 20) === '68060668530151017a03') {
@@ -149,7 +177,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                     testSocket.destroy();
                     server.close();
                     done();
-                }, 20000); // Killswitch!
+                }, 30000); // Killswitch!
                 expect(mbusMaster.mbusMaster.connected).to.be.true;
                 expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
                 setTimeout(function() {
@@ -181,8 +209,10 @@ describe('Native libmbus node-module Serial test ...', function() {
                                     console.log(new Date().toString() + ': mbus-Serial-Master data: ' + JSON.stringify(data, null, 2));
                                     expect(err).to.be.null;
                                     expect(data).to.be.an('array');
-                                    expect(data.length).to.be.equal(1);
+                                    expect(data.length).to.be.equal(3);
                                     expect(data[0]).to.be.equal('17834320B4090107');
+                                    expect(data[1]).to.be.equal('6200165396150331');
+                                    expect(data[2]).to.be.equal('6802476496151F1B');
                                     expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
                                     if (emergencyTimeout) clearTimeout(emergencyTimeout);
