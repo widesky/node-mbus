@@ -177,6 +177,9 @@ When you try to read data while communication is in progress your callback is ca
 
 ## Changelog
 
+### v0.5.2 (2018.04.18)
+* remove unneeded debug output to stdout
+
 ### v0.5.1 (2018.04.16)
 * fix secondary scan
 

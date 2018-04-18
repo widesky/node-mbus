@@ -492,14 +492,11 @@ public:
 
                 if (probe_ret == MBUS_PROBE_SINGLE)
                 {
-                    if (!handle->found_event)
-                    {
-                        printf("Found a device on secondary address %s [using address mask %s]\n", matching_mask, mask);
-                        sprintf(buffer,"\"%s\",",matching_mask);
-                        data = (char*)realloc(data, strlen(data) + strlen(buffer) + 2*sizeof(char));
-                        if (data) {
-                            strcat(data,buffer);
-                        }
+                    //printf("Found a device on secondary address %s [using address mask %s]\n", matching_mask, mask);
+                    sprintf(buffer,"\"%s\",",matching_mask);
+                    data = (char*)realloc(data, strlen(data) + strlen(buffer) + 2*sizeof(char));
+                    if (data) {
+                        strcat(data,buffer);
                     }
                 }
                 else if (probe_ret == MBUS_PROBE_COLLISION)
