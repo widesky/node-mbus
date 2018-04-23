@@ -247,6 +247,8 @@ public:
         mbus_frame_data reply_data;
         char error[100];
         int address;
+        int secondary_selected = 0;
+        int request_frame_res;
 
         memset((void *)&reply, 0, sizeof(mbus_frame));
         memset((void *)&reply_data, 0, sizeof(mbus_frame_data));
@@ -288,7 +290,10 @@ public:
                 uv_rwlock_wrunlock(lock);
                 return;
             }
-            // else MBUS_PROBE_SINGLE
+            else if (ret == MBUS_PROBE_SINGLE)
+            {
+                secondary_selected = 1;
+            }
 
             address = MBUS_ADDRESS_NETWORK_LAYER;
         }
@@ -298,7 +303,16 @@ public:
             address = atoi(addr_str);
         }
 
-        if (mbus_send_request_frame(handle, address) == -1)
+        if (secondary_selected == 1)
+        {
+            request_frame_res = mbus_send_request_frame_fcb(handle, address);
+        }
+        else
+        {
+            request_frame_res = mbus_send_request_frame(handle, address);
+        }
+
+        if (request_frame_res == -1)
         {
             sprintf(error, "Failed to send M-Bus request frame[%s].", addr_str);
             SetErrorMessage(error);
