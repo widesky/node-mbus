@@ -6,6 +6,7 @@ node_js:
   - '4'
   - '6'
   - '8'
+  - '10'
 before_install:
   - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export export CXX=g++-4.8; fi'
   - git clone -b build-windows --single-branch https://github.com/Apollon77/libmbus.git libmbus && cp config.h libmbus/config.h
