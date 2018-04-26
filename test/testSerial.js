@@ -1,10 +1,6 @@
 /* jshint -W097 */// jshint strict:false
 /*jslint node: true */
 /*jshint expr: true*/
-var SegfaultHandler = require('segfault-handler');
-
-SegfaultHandler.registerHandler(__dirname + "../crash.log"); // With no argument, SegfaultHandler will generate a generic log file name
-
 var expect = require('chai').expect;
 
 var net = require('net');
