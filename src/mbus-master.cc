@@ -8,6 +8,7 @@
 #endif
 
 #define MBUS_ERROR(...) fprintf (stderr, __VA_ARGS__)
+#define MAXFRAMES 16
 
 using namespace v8;
 
@@ -244,14 +245,12 @@ public:
         uv_rwlock_wrlock(lock);
 
         mbus_frame reply;
-        mbus_frame_data reply_data;
         char error[100];
         int address;
         int secondary_selected = 0;
         int request_frame_res;
 
         memset((void *)&reply, 0, sizeof(mbus_frame));
-        memset((void *)&reply_data, 0, sizeof(mbus_frame_data));
 
         if (init_slaves(handle) == 0)
         {
@@ -302,76 +301,37 @@ public:
             // primary addressing
             address = atoi(addr_str);
         }
-
-        if (secondary_selected == 1)
+		
+        // instead of the send and recv, use this sendrecv function that
+        // takes care of the possibility of multi-telegram replies (limit = 16 frames)
+        if (mbus_sendrecv_request(handle, address, &reply, MAXFRAMES) != 0)
         {
-            request_frame_res = mbus_send_request_frame_fcb(handle, address);
-        }
-        else
-        {
-            request_frame_res = mbus_send_request_frame(handle, address);
-        }
-
-        if (request_frame_res == -1)
-        {
-            sprintf(error, "Failed to send M-Bus request frame[%s].", addr_str);
-            SetErrorMessage(error);
-            uv_rwlock_wrunlock(lock);
-            return;
-        }
-
-        if (mbus_recv_frame(handle, &reply) != MBUS_RECV_RESULT_OK)
-        {
-            sprintf(error, "Failed to receive M-Bus response frame[%s].", addr_str);
-            SetErrorMessage(error);
-            uv_rwlock_wrunlock(lock);
-            return;
-        }
-
-        //
-        // parse data
-        //
-        if (mbus_frame_data_parse(&reply, &reply_data) == -1)
-        {
-            sprintf(error, "M-bus data parse error [%s].", addr_str);
+            sprintf(error, "Failed to send/receive M-Bus request frame[%s].", addr_str);
             SetErrorMessage(error);
 
             // manual free
-            if (reply_data.data_var.record != NULL)
-            {
-                mbus_data_record_free(reply_data.data_var.record);
-                reply_data.data_var.record = NULL;
-            }
+            mbus_frame_free((mbus_frame*)reply.next);
 
-            uv_rwlock_wrunlock(lock);
             return;
         }
 
         //
         // generate XML
         //
-        if ((data = mbus_frame_data_xml(&reply_data)) == NULL)
+        if ((data = mbus_frame_xml(&reply)) == NULL)
         {
             sprintf(error, "Failed to generate XML representation of MBUS frame [%s].", addr_str);
             SetErrorMessage(error);
 
             // manual free
-            if (reply_data.data_var.record != NULL)
-            {
-                mbus_data_record_free(reply_data.data_var.record);
-                reply_data.data_var.record = NULL;
-            }
+			mbus_frame_free((mbus_frame*)reply.next);
 
             uv_rwlock_wrunlock(lock);
             return;
         }
 
         // manual free
-        if (reply_data.data_var.record != NULL)
-        {
-            mbus_data_record_free(reply_data.data_var.record);
-            reply_data.data_var.record = NULL;
-        }
+        mbus_frame_free((mbus_frame*)reply.next);
 
         uv_rwlock_wrunlock(lock);
     }
