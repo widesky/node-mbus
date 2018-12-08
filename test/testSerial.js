@@ -174,7 +174,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                     testSocket.destroy();
                     server.close();
                     done();
-                }, 30000); // Killswitch!
+                }, 60000); // Killswitch!
                 expect(mbusMaster.mbusMaster.connected).to.be.true;
                 expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
                 setTimeout(function() {
@@ -221,6 +221,7 @@ describe('Native libmbus node-module Serial test ...', function() {
                                             server.close(function(err) {
                                                 testSocket.destroy();
                                                 console.log('mbus-Serial-Device: Server closed');
+                                                clearTimeout(emergencyTimeout);
                                                 setTimeout(done, 2000);
                                             });
                                         }, 1000);
