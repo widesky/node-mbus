@@ -312,6 +312,7 @@ public:
             // manual free
             mbus_frame_free((mbus_frame*)reply.next);
 
+            uv_rwlock_wrunlock(lock);
             return;
         }
 

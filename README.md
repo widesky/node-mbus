@@ -176,7 +176,7 @@ When you try to read data while communication is in progress your callback is ca
 
 ## Changelog
 
-### 0.6.0 (2018-12-09)
+### 0.6.0/1 (2018-12-09)
 * added multi telegram support (thanks to @lvogt)
 * changed fcb flagging
 
