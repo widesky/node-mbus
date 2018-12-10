@@ -1,3 +1,5 @@
 test
 .travis.yml
 appveyor.yml
+.codeclimate.yml
+.idea
