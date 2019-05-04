@@ -7,8 +7,9 @@ node_js:
   - '6'
   - '8'
   - '10'
+  - '12'
 before_install:
-  - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export export CXX=g++-4.8; fi'
+  - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then export export CXX=g++-4.9; fi'
   - git clone -b build-windows --single-branch https://github.com/Apollon77/libmbus.git libmbus && cp config.h libmbus/config.h
   - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter; fi'
   - 'if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then chmod +x ./cc-test-reporter; fi'
@@ -26,5 +27,5 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - g++-4.8
+      - g++-4.9
       - socat
