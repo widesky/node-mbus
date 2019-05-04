@@ -2,7 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 
-char *get(v8::Handle<v8::Value> value, const char *fallback) {
+char *get(v8::Local<v8::Value> value, const char *fallback) {
     Nan::HandleScope scope;
 
     char *str;

@@ -5,6 +5,6 @@
 #include <v8.h>
 #include <nan.h>
 
-char *get(v8::Handle<v8::Value> value, const char *fallback = "");
+char *get(v8::Local<v8::Value> value, const char *fallback = "");
 
 #endif
