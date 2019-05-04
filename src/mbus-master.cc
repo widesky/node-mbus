@@ -42,8 +42,8 @@ NAN_MODULE_INIT(MbusMaster::Init) {
     tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     // link our getters and setter to the object property
-    Nan::SetAccessor(ctor->InstanceTemplate(), Nan::New("connected").ToLocalChecked(), MbusMaster::HandleGetters, MbusMaster::HandleSetters);
-    Nan::SetAccessor(ctor->InstanceTemplate(), Nan::New("communicationInProgress").ToLocalChecked(), MbusMaster::HandleGetters, MbusMaster::HandleSetters);
+    Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New("connected").ToLocalChecked(), MbusMaster::HandleGetters, MbusMaster::HandleSetters);
+    Nan::SetAccessor(tpl->InstanceTemplate(), Nan::New("communicationInProgress").ToLocalChecked(), MbusMaster::HandleGetters, MbusMaster::HandleSetters);
 
     // Prototype
     Nan::SetPrototypeMethod(tpl, "openSerial", OpenSerial);
