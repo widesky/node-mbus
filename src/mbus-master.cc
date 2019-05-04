@@ -77,9 +77,9 @@ NAN_METHOD(MbusMaster::OpenTCP) {
 
     MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
-    int port = (long)info[1]->IntegerValue();
-    char *host = get(info[0]->ToString(), "127.0.0.1");
-    double timeout = (double)info[2]->NumberValue();
+    int port = (long)Nan::To<int64_t>(info[1]).FromJust();
+    char *host = get(Nan::To<v8::String>(info[0]).ToLocalChecked(), "127.0.0.1");
+    double timeout = (double)Nan::To<double>(info[2]).FromJust();
 
     if(!obj->connected) {
         obj->serial = false;
@@ -121,8 +121,8 @@ NAN_METHOD(MbusMaster::OpenSerial) {
     MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     long boudrate;
-    int _boudrate = info[1]->IntegerValue();
-    char *port = get(info[0]->ToString(), "/dev/ttyS0");
+    int _boudrate = (int)Nan::To<int64_t>(info[1]).FromJust();
+    char *port = get(Nan::To<v8::String>(info[0]).ToLocalChecked(), "/dev/ttyS0");
 
     switch(_boudrate) {
     case 300:
@@ -378,7 +378,7 @@ NAN_METHOD(MbusMaster::Get) {
 
     MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
-    char *address = get(info[0]->ToString(),"0");
+    char *address = get(Nan::To<v8::String>(info[0]).ToLocalChecked(),"0");
     Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
     if(obj->connected) {
         obj->communicationInProgress = true;
@@ -768,8 +768,8 @@ NAN_METHOD(MbusMaster::SetPrimaryId) {
 
     MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
-    char *oldAddress = get(info[0]->ToString(),"0");
-    int newAddress = (int)info[1]->IntegerValue();
+    char *oldAddress = get(Nan::To<v8::String>(info[0]).ToLocalChecked(),"0");
+    int newAddress = (int)Nan::To<int64_t>(info[1]).FromJust();
     Nan::Callback *callback = new Nan::Callback(info[2].As<Function>());
     if(obj->connected) {
         obj->communicationInProgress = true;
