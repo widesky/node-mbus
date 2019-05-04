@@ -20,7 +20,8 @@ install:
   - ps: Start-FileDownload https://github.com/Apollon77/SupportingFiles/raw/master/appveyor/serial/com2tcp.exe
   - ps: 'Install-Product node $env:nodejs_version $env:platform'
   # https://www.appveyor.com/docs/lang/nodejs-iojs/#installing-any-version-of-nodejs-or-iojs
-  - ps: Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version) $env:platform  - git clone -b build-windows --single-branch https://github.com/Apollon77/libmbus.git libmbus
+  - ps: Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version) $env:platform
+  - git clone -b build-windows --single-branch https://github.com/Apollon77/libmbus.git libmbus
   - cp config.h libmbus/config.h
   - npm install --debug
   - type C:\projects\node-mbus\build\libmbus.vcxproj & exit 0
