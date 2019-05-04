@@ -1,13 +1,13 @@
 {
     "name": "node-mbus",
-    "version": "0.7.0",
+    "version": "1.0.0",
     "description": "libmbus binding",
     "keywords": [
         "mbus"
     ],
     "main": "index.js",
     "engines": {
-        "node": ">= 4"
+        "node": ">=6"
     },
     "scripts": {
         "prepublish":"rm -rf libmbus && git clone -b build-windows --single-branch https://github.com/Apollon77/libmbus.git libmbus && rm libmbus/.gitignore && cp config.h libmbus/config.h",
