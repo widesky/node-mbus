@@ -18,7 +18,7 @@ install:
   - ps: .\setup_com0com_W7_x64_signed.exe /S
   - ps: sleep 60
   - ps: Start-FileDownload https://github.com/Apollon77/SupportingFiles/raw/master/appveyor/serial/com2tcp.exe
-  - ps: 'Install-Product node $env:nodejs_version $env:platform'
+  #- ps: 'Install-Product node $env:nodejs_version $env:platform'
   # https://www.appveyor.com/docs/lang/nodejs-iojs/#installing-any-version-of-nodejs-or-iojs
   - ps: Update-NodeJsInstallation (Get-NodeJsLatestBuild $env:nodejs_version) $env:platform
   - git clone -b build-windows --single-branch https://github.com/Apollon77/libmbus.git libmbus
