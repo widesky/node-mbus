@@ -25,7 +25,7 @@ private:
     static NAN_GETTER(HandleGetters);
     static NAN_SETTER(HandleSetters);
 
-    static Persistent<v8::Function> constructor;
+    static Nan::Persistent<v8::Function> constructor;
 
     bool connected;
     bool communicationInProgress;

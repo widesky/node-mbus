@@ -12,7 +12,7 @@
 
 using namespace v8;
 
-Persistent<v8::Function> MyObject::constructor;
+Nan::Persistent<v8::Function> MbusMaster::constructor;
 
 MbusMaster::MbusMaster() {
     connected = false;
@@ -55,7 +55,7 @@ NAN_MODULE_INIT(MbusMaster::Init) {
 
     v8::Local<v8::Function> function = Nan::GetFunction(tpl).ToLocalChecked();
     constructor.Reset(function);
-    Set(target, Nan::New<v8::String>("MyObject").ToLocalChecked(), function);
+    Set(target, Nan::New<v8::String>("MbusMaster").ToLocalChecked(), function);
 }
 
 NAN_METHOD(MbusMaster::New) {
