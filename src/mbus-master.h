@@ -6,7 +6,7 @@
 #include <uv.h>
 #include <nan.h>
 
-class MbusMaster : public Nan::ObjectWrap {
+class MbusMaster : public node::ObjectWrap {
 public:
     static NAN_MODULE_INIT(Init);
 
@@ -25,7 +25,7 @@ private:
     static NAN_GETTER(HandleGetters);
     static NAN_SETTER(HandleSetters);
 
-    static Nan::Persistent<v8::FunctionTemplate> constructor;
+    static Persistent<v8::Function> constructor;
 
     bool connected;
     bool communicationInProgress;

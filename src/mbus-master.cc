@@ -12,7 +12,7 @@
 
 using namespace v8;
 
-Nan::Persistent<v8::FunctionTemplate> MbusMaster::constructor;
+Persistent<v8::Function> MyObject::constructor;
 
 MbusMaster::MbusMaster() {
     connected = false;
@@ -37,24 +37,25 @@ NAN_MODULE_INIT(MbusMaster::Init) {
     Nan::HandleScope scope;
 
     // Prepare constructor template
-    Local<FunctionTemplate> ctor = Nan::New<FunctionTemplate>(MbusMaster::New);
-    constructor.Reset(ctor);
-    ctor->InstanceTemplate()->SetInternalFieldCount(1);
-    ctor->SetClassName(Nan::New("MbusMaster").ToLocalChecked());
+    Local<FunctionTemplate> tpl = Nan::New<FunctionTemplate>(New);
+    tpl->SetClassName(Nan::New<v8::String>("MbusMaster").ToLocalChecked());
+    tpl->InstanceTemplate()->SetInternalFieldCount(1);
 
     // link our getters and setter to the object property
     Nan::SetAccessor(ctor->InstanceTemplate(), Nan::New("connected").ToLocalChecked(), MbusMaster::HandleGetters, MbusMaster::HandleSetters);
     Nan::SetAccessor(ctor->InstanceTemplate(), Nan::New("communicationInProgress").ToLocalChecked(), MbusMaster::HandleGetters, MbusMaster::HandleSetters);
 
     // Prototype
-    Nan::SetPrototypeMethod(ctor, "openSerial", OpenSerial);
-    Nan::SetPrototypeMethod(ctor, "openTCP", OpenTCP);
-    Nan::SetPrototypeMethod(ctor, "close", Close);
-    Nan::SetPrototypeMethod(ctor, "get", Get);
-    Nan::SetPrototypeMethod(ctor, "scan", ScanSecondary);
-    Nan::SetPrototypeMethod(ctor, "setPrimaryId", SetPrimaryId);
+    Nan::SetPrototypeMethod(tpl, "openSerial", OpenSerial);
+    Nan::SetPrototypeMethod(tpl, "openTCP", OpenTCP);
+    Nan::SetPrototypeMethod(tpl, "close", Close);
+    Nan::SetPrototypeMethod(tpl, "get", Get);
+    Nan::SetPrototypeMethod(tpl, "scan", ScanSecondary);
+    Nan::SetPrototypeMethod(tpl, "setPrimaryId", SetPrimaryId);
 
-    target->Set(Nan::New("MbusMaster").ToLocalChecked(), ctor->GetFunction());
+    v8::Local<v8::Function> function = Nan::GetFunction(tpl).ToLocalChecked();
+    constructor.Reset(function);
+    Set(target, Nan::New<v8::String>("MyObject").ToLocalChecked(), function);
 }
 
 NAN_METHOD(MbusMaster::New) {
