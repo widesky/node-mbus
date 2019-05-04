@@ -75,7 +75,7 @@ NAN_METHOD(MbusMaster::New) {
 NAN_METHOD(MbusMaster::OpenTCP) {
     Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     int port = (long)info[1]->IntegerValue();
     char *host = get(info[0]->ToString(), "127.0.0.1");
@@ -118,7 +118,7 @@ NAN_METHOD(MbusMaster::OpenTCP) {
 NAN_METHOD(MbusMaster::OpenSerial) {
     Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     long boudrate;
     int _boudrate = info[1]->IntegerValue();
@@ -194,7 +194,7 @@ NAN_METHOD(MbusMaster::OpenSerial) {
 NAN_METHOD(MbusMaster::Close) {
     Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     if(obj->communicationInProgress) {
         info.GetReturnValue().Set(Nan::False());
@@ -376,7 +376,7 @@ private:
 NAN_METHOD(MbusMaster::Get) {
     Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     char *address = get(info[0]->ToString(),"0");
     Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
@@ -581,7 +581,7 @@ private:
 NAN_METHOD(MbusMaster::ScanSecondary) {
     Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     Nan::Callback *callback = new Nan::Callback(info[0].As<Function>());
     if(obj->connected) {
@@ -766,7 +766,7 @@ private:
 NAN_METHOD(MbusMaster::SetPrimaryId) {
     Nan::HandleScope scope;
 
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     char *oldAddress = get(info[0]->ToString(),"0");
     int newAddress = (int)info[1]->IntegerValue();
@@ -786,7 +786,7 @@ NAN_METHOD(MbusMaster::SetPrimaryId) {
 
 
 NAN_GETTER(MbusMaster::HandleGetters) {
-    MbusMaster* obj = Nan::ObjectWrap::Unwrap<MbusMaster>(info.This());
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     std::string propertyName = std::string(*Nan::Utf8String(property));
     if (propertyName == "connected") {
