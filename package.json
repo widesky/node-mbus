@@ -1,6 +1,6 @@
 {
     "name": "node-mbus",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "libmbus binding",
     "keywords": [
         "mbus"
@@ -31,10 +31,10 @@
     "dependencies": {
         "bindings": "^1.5.0",
         "nan": "~2.14.0",
-        "xml2js": "^0.4.19"
+        "xml2js": "^0.4.22"
     },
     "devDependencies": {
-        "mocha": "^6.1.4",
+        "mocha": "^6.2.1",
         "chai": "^4.2.0",
         "nyc": "*"
     }
