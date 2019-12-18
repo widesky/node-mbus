@@ -3,3 +3,5 @@ test
 appveyor.yml
 .codeclimate.yml
 .idea
+package-lock.js
+.github
