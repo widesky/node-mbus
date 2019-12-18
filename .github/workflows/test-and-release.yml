@@ -33,7 +33,7 @@ jobs:
 
 
       - name: Install mbus Library
-        run: npm prepublish
+        run: npm run prepublish
 
       - name: Install Dependencies
         run: npm ci
