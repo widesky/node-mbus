@@ -31,7 +31,6 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-
       - name: Install mbus Library
         run: npm run prepublish
 
@@ -60,6 +59,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: ${{ matrix.node-version }}
+
+      - name: Install mbus Library
+        run: npm run prepublish
 
       - name: Install Dependencies
         run: npm ci
