@@ -55,7 +55,8 @@ NAN_MODULE_INIT(MbusMaster::Init) {
 
     v8::Local<v8::Function> function = Nan::GetFunction(tpl).ToLocalChecked();
     constructor.Reset(function);
-    target->Set(Nan::New("MbusMaster").ToLocalChecked(), function);
+    v8::Local<v8::Context> context = target->CreationContext();
+    target->Set(context, Nan::New("MbusMaster").ToLocalChecked(), function);
 }
 
 NAN_METHOD(MbusMaster::New) {

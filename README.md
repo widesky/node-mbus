@@ -175,6 +175,10 @@ When you try to read data while communication is in progress your callback is ca
 
 ## Changelog
 
+### 1.1.0 (2020-04-12)
+* make compatible to nodejs 13
+* update deps
+
 ### 1.0.1 (2019-10-16)
 * update deps 
 
