@@ -166,12 +166,12 @@ describe('Native libmbus node-module Serial test ...', function() {
                 console.log(new Date().toString() + ': mbus-Serial-Master Open:' + connectResult);
                 if (!connectResult) {
                     socat.kill('SIGKILL');
-                    testSocket.destroy();
+                    testSocket && testSocket.destroy();
                     server.close();
                 }
                 var emergencyTimeout = setTimeout(function() {
                     socat.kill('SIGKILL');
-                    testSocket.destroy();
+                    testSocket && testSocket.destroy();
                     server.close();
                     done();
                 }, 60000); // Killswitch!
