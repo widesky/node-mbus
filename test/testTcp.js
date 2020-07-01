@@ -127,7 +127,7 @@ describe('Native libmbus node-module TCP test ...', function() {
                         console.log(new Date().toString() + ': mbus-TCP-Master err: ' + err);
                         console.log(new Date().toString() + ': mbus-TCP-Master data: ' + JSON.stringify(data, null, 2));
                         expect(err).to.be.null;
-                        expect(data.SlaveInformation.Id).to.be.equal(5000244);
+                        expect(data.SlaveInformation.Id).to.be.equal('500023E');
                         expect(data.DataRecord[0].Value).to.be.equal(1252);
                         expect(mbusMaster.mbusMaster.communicationInProgress).to.be.false;
 
