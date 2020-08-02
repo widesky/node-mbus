@@ -1,6 +1,6 @@
 {
     "name": "node-mbus",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "libmbus binding",
     "keywords": [
         "mbus"
