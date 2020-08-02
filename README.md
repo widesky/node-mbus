@@ -175,6 +175,9 @@ When you try to read data while communication is in progress your callback is ca
 
 ## Changelog
 
+### __WORK IN PROGRESS__
+* update to libmbus 0.9.0 from 16.7.2020
+
 ### 1.1.0 (2020-04-12)
 * make compatible to nodejs 13
 * update deps
