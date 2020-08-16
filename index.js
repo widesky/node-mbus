@@ -123,11 +123,11 @@ MbusMaster.prototype.getData = function getData(address, callback) {
                     attrValueProcessors: [xmlParser.processors.parseNumbers]
                 };
                 xmlParser.parseString(data, parserOpt, function (err, result) {
-                    if (!err) {
+                    if (!err && result && result.MBusData) {
                         result = result.MBusData;
-                    }
-                    if (result.DataRecord && !Array.isArray(result.DataRecord)) {
-                        result.DataRecord = [result.DataRecord];
+                        if (result.DataRecord && !Array.isArray(result.DataRecord)) {
+                            result.DataRecord = [result.DataRecord];
+                        }
                     }
                     if (callback) callback(err, result);
                 });
