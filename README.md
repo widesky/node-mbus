@@ -175,7 +175,7 @@ When you try to read data while communication is in progress your callback is ca
 
 ## Changelog
 
-### __WORK IN PROGRESS__
+### 1.2.1 (2020-08-16)
 * fix potential crash case
 
 ### 1.2.0 (2020-08-02)
