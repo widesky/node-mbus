@@ -302,8 +302,24 @@ public:
         {
             // primary addressing
             address = atoi(addr_str);
+
+            // send a reset SND_NKE to the device before requesting data
+            // this does not make sense for devices that are accessed by secondary addressing
+            // as the reset de-selects the device
+            // taken from https://github.com/rscada/libmbus/pull/95
+            if (mbus_send_ping_frame(handle, address, 1) == -1)
+            {
+                sprintf(error, "Failed to initialize slave[%s].", addr_str);
+                SetErrorMessage(error);
+
+                // manual free
+                mbus_frame_free((mbus_frame*)reply.next);
+
+                uv_rwlock_wrunlock(lock);
+                return;
+            }
         }
-		
+
         // instead of the send and recv, use this sendrecv function that
         // takes care of the possibility of multi-telegram replies (limit = 16 frames)
         if (mbus_sendrecv_request(handle, address, &reply, MAXFRAMES) != 0)
