@@ -78,7 +78,6 @@ jobs:
 
       - name: Install com2tcp (Windows)
         if: startsWith(runner.OS, 'Windows')
-        shell: cmd
         run: |
           choco install --no-progress com2tcp
 
