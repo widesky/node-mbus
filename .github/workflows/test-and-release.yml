@@ -93,8 +93,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         shell: cmd
         run: |
-          echo PATH=C:\tools\cygwin\bin;C:\tools\cygwin\usr\bin;%PATH% >> %GITHU
-        B_ENV%
+          echo PATH=C:\tools\cygwin\bin;C:\tools\cygwin\usr\bin;%PATH% >> %GITHUB_ENV%
           echo "PATH=%PATH%"
 
       - name: Install mbus Library
