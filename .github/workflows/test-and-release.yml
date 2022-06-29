@@ -76,25 +76,11 @@ jobs:
         if: startsWith(runner.OS, 'linux')
         run: sudo apt-get install -y socat
 
-      - name: Install cygwin base packages with chocolatey
+      - name: Install com2tcp (Windows)
         if: startsWith(runner.OS, 'Windows')
         shell: cmd
         run: |
-          choco config get cacheLocation
-          choco install --no-progress cygwin
-
-      - name: Install cygwin additional packages
-        if: startsWith(runner.OS, 'Windows')
-        shell: cmd
-        run: |
-          C:\tools\cygwin\cygwinsetup.exe -qgnNdO -R C:/tools/cygwin -s http://mirrors.kernel.org/sourceware/cygwin/ -P socat
-
-      - name: Set ENV
-        if: startsWith(runner.OS, 'Windows')
-        shell: cmd
-        run: |
-          echo PATH=C:\tools\cygwin\bin;C:\tools\cygwin\usr\bin;%PATH% >> %GITHUB_ENV%
-          echo "PATH=%PATH%"
+          choco install --no-progress com2tcp
 
       - name: Install mbus Library
         run: npm run prepare

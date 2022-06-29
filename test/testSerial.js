@@ -128,11 +128,11 @@ describe('Native libmbus node-module Serial test ...', function() {
             console.log('mbus-Serial-Device: Listening');
 
             var socat;
-            if (!(process.env.APPVEYOR && process.env.APPVEYOR==='True')) {
+            if (os.platform !== 'win32') {
                 socat = spawn('socat', ['-D', '-x', '-s', 'pty,link=/tmp/virtualcom0,ispeed=9600,ospeed=9600,raw', 'tcp:127.0.0.1:15001']);
             }
             else { // for manual tests use com0com to create a virtual COM pair and com2tcp to direct one side to tcp
-                socat = spawn(process.env.APPVEYOR_BUILD_FOLDER + '\\com2tcp.exe', ['--ignore-dsr', '--baud', '9600', '--parity', 'e', '\\\\.\\CNCA0', '127.0.0.1', '15001']);
+                socat = spawn('com2tcp.exe', ['--ignore-dsr', '--baud', '9600', '--parity', 'e', '\\\\.\\CNCA0', '127.0.0.1', '15001']);
             }
             console.log('mbus-Serial-Device: Socat spawned');
             socat.stdout.on('data', function(data) {
