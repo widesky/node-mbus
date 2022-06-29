@@ -83,8 +83,8 @@ jobs:
         run: |
           $wc = New-Object System.Net.WebClient
           $wc.DownloadFile("https://github.com/Apollon77/SupportingFiles/raw/master/appveyor/serial/com0com.cer", "com0com.cer")
-          C:\"Program Files"\"Microsoft SDKs"\Windows\v7.1\Bin\CertMgr.exe /add com0com.cer /s /r localMachine root
-          C:\"Program Files"\"Microsoft SDKs"\Windows\v7.1\Bin\CertMgr.exe /add com0com.cer /s /r localMachine trustedpublisher
+          CertMgr.exe /add com0com.cer /s /r localMachine root
+          CertMgr.exe /add com0com.cer /s /r localMachine trustedpublisher
           $wc.DownloadFile("https://github.com/Apollon77/SupportingFiles/raw/master/appveyor/serial/setup_com0com_W7_x64_signed.exe", "setup_com0com_W7_x64_signed.exe")
           $env:CNC_INSTALL_CNCA0_CNCB0_PORTS="YES"
           .\setup_com0com_W7_x64_signed.exe /S
