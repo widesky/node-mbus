@@ -36,17 +36,17 @@ describe('Native libmbus node-module Serial test ...', function() {
 
             var counterFD = 0;
             socket.on('data', function (data) {
-                var sendBuf;
+                let sendBuf;
 
                 if (!data) {
                     console.log(new Date().toString() + ': mbus-Serial-Device: Received empty string!');
                     return;
                 }
-                var hexData = data.toString('hex');
+                const hexData = data.toString('hex');
                 console.log(new Date().toString() + ': mbus-Serial-Device: Received from Master: ' + hexData);
 
                 if (hexData.substring(0, 4) === '1040') {
-                    var device = hexData.substring(4, 6);
+                    const device = hexData.substring(4, 6);
                     console.log(new Date().toString() + ':     mbus-Serial-Device: Initialization Request ' + device);
                     if (device === "fe" || device === "01" || device === "05") {
                         sendBuf = Buffer.from('E5', 'hex');
@@ -118,23 +118,26 @@ describe('Native libmbus node-module Serial test ...', function() {
             console.log('mbus-Serial-Device: Listening');
 
             let socat;
+            let command;
             if (os.platform() !== 'win32') {
                 socat = spawn('socat', ['-D', '-x', '-s', 'pty,link=/tmp/virtualcom0,ispeed=9600,ospeed=9600,raw', 'tcp:127.0.0.1:15001']);
+                command = 'socat';
             }
             else { // for manual tests use com0com to create a virtual COM pair and com2tcp to direct one side to tcp
                 socat = spawn('com2tcp.exe', ['--ignore-dsr', '--baud', '9600', '--parity', 'e', '\\\\.\\CNCA0', '127.0.0.1', '15001']);
+                command = 'com2tcp';
             }
-            console.log('mbus-Serial-Device: Socat spawned');
+            console.log('mbus-Serial-Device: ' + command + ' spawned');
             socat.stdout.on('data', function(data) {
-              console.log('socat stdout: ' + data);
+              console.log(command + ' stdout: ' + data);
             });
 
             socat.stderr.on('data', function(data) {
-              console.log('socat stderr: ' + data);
+              console.log(command + ' stderr: ' + data);
             });
 
             socat.on('close', function(code) {
-              console.log('socat child process exited with code ' + code);
+              console.log(command + ' child process exited with code ' + code);
             });
 
             setTimeout(function() {
