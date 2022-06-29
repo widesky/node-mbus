@@ -173,14 +173,13 @@ When you try to read data while communication is in progress your callback is ca
 * Also build the libmbus binaries and tools? (if needed)
 
 ## Changelog
-
-### __WORK IN PROGRESS__
+### 2.0.0 (2022-06-29)
 * IMPORTANT: Minimum node.js version is not 12.x and all LTS supported up to 18.x
 * Add promisified methods with Async at the end of the name (e.g. `connectAsync`)
 * Internal rewrite to ES6 class
 
 ### 1.2.2 (2021-03-06)
-* try to send reset to the exact device when reading data 
+* try to send reset to the exact device when reading data
 
 ### 1.2.1 (2020-08-16)
 * fix potential crash case
@@ -193,7 +192,7 @@ When you try to read data while communication is in progress your callback is ca
 * update deps
 
 ### 1.0.1 (2019-10-16)
-* update deps 
+* update deps
 
 ### 1.0.0 (2019-05-04)
 * added compatibility to nodejs 12, but also remove support for nodejs 4 (may work, but can break anytime)
@@ -211,11 +210,6 @@ When you try to read data while communication is in progress your callback is ca
 
 ### v0.5.0 (2018.03.26)
 * add method to set a new Primary ID for a device
-
-### v0.4.x (2018.03.25)
-* library now tries to make sure that only one request/scan runs and also connect/close should be secured
-* add option to overwrite default tcp timeout
-* allow close when using callback to wait till connection can be closed (will check any 500ms)
 
 ### v0.3.0 (2018.03.15)
 * official release
