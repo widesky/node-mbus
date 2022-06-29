@@ -79,8 +79,8 @@ jobs:
       - name: Install com2tcp (Windows)
         if: startsWith(runner.OS, 'Windows')
         shell: pwsh
+        #          choco install --no-progress com2tcp
         run: |
-#          choco install --no-progress com2tcp
           Start-FileDownload https://github.com/Apollon77/SupportingFiles/raw/master/appveyor/serial/com0com.cer
           C:\"Program Files"\"Microsoft SDKs"\Windows\v7.1\Bin\CertMgr.exe /add com0com.cer /s /r localMachine root
           C:\"Program Files"\"Microsoft SDKs"\Windows\v7.1\Bin\CertMgr.exe /add com0com.cer /s /r localMachine trustedpublisher
