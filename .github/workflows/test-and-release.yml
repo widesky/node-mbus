@@ -73,6 +73,7 @@ jobs:
         run: brew install socat
 
       - name: Install socat (Linux)
+        if: startsWith(runner.OS, 'linux')
         run: sudo apt-get install -y socat
 
       - name: Install mbus Library
