@@ -139,7 +139,7 @@ describe('Native libmbus node-module Serial test ...', function() {
 
             setTimeout(function() {
                 let mbusOptions;
-                if (!(process.env.APPVEYOR && process.env.APPVEYOR==='True')) {
+                if (os.platform() !== 'win32') {
                     mbusOptions = {
                         serialPort: '/tmp/virtualcom0',
                         serialBaudRate: 9600
