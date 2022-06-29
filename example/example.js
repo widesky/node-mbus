@@ -10,7 +10,8 @@ var mbusOptions = {
 var mbusOptions = {
     serialPort: 'COM9',
     serialBaudRate: 2400,
-    autoConnect: true
+    autoConnect: true,
+    // timeout: 3000 // Use this if a custom timeout is needed
 };
 
 var mbusMaster = new MbusMaster(mbusOptions);

@@ -174,6 +174,11 @@ When you try to read data while communication is in progress your callback is ca
 
 ## Changelog
 
+### __WORK IN PROGRESS__
+* IMPORTANT: Minimum node.js version is not 12.x and all LTS supported up to 18.x
+* Add promisified methods with Async at the end of the name (e.g. `connectAsync`)
+* Internal rewrite to ES6 class
+
 ### 1.2.2 (2021-03-06)
 * try to send reset to the exact device when reading data 
 

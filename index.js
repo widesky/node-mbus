@@ -62,6 +62,19 @@ class MbusMaster {
         return false;
     }
 
+    connectAsync() {
+        return new Promise((resolve, reject) => {
+            this.connect((err) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+    }
+
     close(callback, wait) {
         if (wait === undefined) {
             wait = !!callback;
@@ -98,6 +111,19 @@ class MbusMaster {
             }
             return false;
         }
+    }
+
+    closeAsync() {
+        return new Promise((resolve, reject) => {
+            this.close((err) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
     }
 
     getData(address, callback) {
@@ -139,6 +165,19 @@ class MbusMaster {
         });
     }
 
+    getDataAsync(address) {
+        return new Promise((resolve, reject) => {
+            this.getData(address, (err, data) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve(data);
+                }
+            });
+        });
+    }
+
     scanSecondary(callback) {
         if (!this.mbusMaster.connected && !this.options.autoConnect) {
             if (callback) callback(new Error('Not connected and autoConnect is false'));
@@ -173,6 +212,19 @@ class MbusMaster {
         });
     }
 
+    scanSecondaryAsync() {
+        return new Promise((resolve, reject) => {
+            this.scanSecondary((err, data) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve(data);
+                }
+            });
+        });
+    }
+
     setPrimaryId(oldAddress, newAddress, callback) {
         if (!this.mbusMaster.connected && !this.options.autoConnect) {
             if (callback) callback(new Error('Not connected and autoConnect is false'));
@@ -192,6 +244,19 @@ class MbusMaster {
                     err = null;
                 }
                 if (callback) callback(err);
+            });
+        });
+    }
+
+    setPrimaryIdAsync(oldAddress, newAddress) {
+        return new Promise((resolve, reject) => {
+            this.setPrimaryId(oldAddress, newAddress, (err) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve();
+                }
             });
         });
     }
