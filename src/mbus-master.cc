@@ -233,8 +233,8 @@ static int init_slaves(mbus_handle *handle)
 
 class RecieveWorker : public Nan::AsyncWorker {
 public:
-    RecieveWorker(Nan::Callback *callback,char *addr_str,uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
-    : Nan::AsyncWorker(callback), addr_str(addr_str), lock(lock), handle(handle), communicationInProgress(communicationInProgress) {}
+    RecieveWorker(Nan::Callback *callback, char *addr_str, bool ping_first, uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
+    : Nan::AsyncWorker(callback), addr_str(addr_str), ping_first(ping_first), lock(lock), handle(handle), communicationInProgress(communicationInProgress) {}
     ~RecieveWorker() {
         free(addr_str);
     }
@@ -254,12 +254,15 @@ public:
 
         memset((void *)&reply, 0, sizeof(mbus_frame));
 
-        if (init_slaves(handle) == 0)
+        if (ping_first)
         {
-            sprintf(error, "Failed to init slaves.");
-            SetErrorMessage(error);
-            uv_rwlock_wrunlock(lock);
-            return;
+            if (init_slaves(handle) == 0)
+            {
+                sprintf(error, "Failed to init slaves.");
+                SetErrorMessage(error);
+                uv_rwlock_wrunlock(lock);
+                return;
+            }
         }
 
         if (mbus_is_secondary_address(addr_str))
@@ -303,20 +306,23 @@ public:
             // primary addressing
             address = atoi(addr_str);
 
-            // send a reset SND_NKE to the device before requesting data
-            // this does not make sense for devices that are accessed by secondary addressing
-            // as the reset de-selects the device
-            // taken from https://github.com/rscada/libmbus/pull/95
-            if (mbus_send_ping_frame(handle, address, 1) == -1)
+            if (ping_first)
             {
-                sprintf(error, "Failed to initialize slave[%s].", addr_str);
-                SetErrorMessage(error);
+                // send a reset SND_NKE to the device before requesting data
+                // this does not make sense for devices that are accessed by secondary addressing
+                // as the reset de-selects the device
+                // taken from https://github.com/rscada/libmbus/pull/95
+                if (mbus_send_ping_frame(handle, address, 1) == -1)
+                {
+                    sprintf(error, "Failed to initialize slave[%s].", addr_str);
+                    SetErrorMessage(error);
 
-                // manual free
-                mbus_frame_free((mbus_frame*)reply.next);
+                    // manual free
+                    mbus_frame_free((mbus_frame*)reply.next);
 
-                uv_rwlock_wrunlock(lock);
-                return;
+                    uv_rwlock_wrunlock(lock);
+                    return;
+                }
             }
         }
 
@@ -343,7 +349,7 @@ public:
             SetErrorMessage(error);
 
             // manual free
-			mbus_frame_free((mbus_frame*)reply.next);
+            mbus_frame_free((mbus_frame*)reply.next);
 
             uv_rwlock_wrunlock(lock);
             return;
@@ -385,6 +391,7 @@ public:
 private:
     char *data;
     char *addr_str;
+    bool ping_first;
     uv_rwlock_t *lock;
     mbus_handle *handle;
     bool *communicationInProgress;
@@ -396,11 +403,13 @@ NAN_METHOD(MbusMaster::Get) {
     MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     char *address = get(Nan::To<v8::String>(info[0]).ToLocalChecked(),"0");
-    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+    bool ping_first = Nan::To<bool>(info[1]).FromJust();
+    Nan::Callback *callback = new Nan::Callback(info[2].As<Function>());
+
     if(obj->connected) {
         obj->communicationInProgress = true;
 
-        Nan::AsyncQueueWorker(new RecieveWorker(callback, address, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
+        Nan::AsyncQueueWorker(new RecieveWorker(callback, address, ping_first, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
     } else {
         Local<Value> argv[] = {
             Nan::Error("Not connected to port")
