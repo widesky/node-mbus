@@ -60,8 +60,13 @@ The optional callback will be called with an *error* parameter that is *null* on
 The method will return true/false when no callback is provided.
 When you have provided a callback and you try to close the connection while communication is in progress the method will wait till communication has finished (checked every 500ms), then close the connection and then call the callback. When not using a callback then you get false as result in this case. When you set *waitTillClosed* while using a callback the callback will be called with an error if communication is still ongoing.
 
-### getData(address, callback)
+### getData(address, [options,] callback)
 This method is requesting "Class 2 Data" from the device with the given *address*.
+
+The *options* parameter is optional, and if given, is in the form of an object with one or more of the following properties set:
+
+ * `pingFirst`: (Boolean; default `true`) Ping the target devices first before attempting communication.  This is primarily a work-around to some devices (such as the Sontex Supercal531) that must be "reset" first.  The default is to always perform these initial pings, however the feature can be disabled if the M-Bus slave devices are known to behave without it.
+
 The callback is called with an *error* and *data* parameter. When data are received successfully the *data* parameter contains the data object.
 When you try to read data while communication is in progress your callback is called with an error.
 
