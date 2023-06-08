@@ -49,6 +49,19 @@ In the options object you set the communication and other parameter for the libr
 * *serialPort*/*serialBaudRate*: For Serial communication you set the *serialPort* (e.g. /dev/ttyUSB0) and optionally the *serialBaudRate* to connect. Default Baudrate is 2400baud if option is missing
 * *autoConnect*: set to "true" if connection should be established automatically when needed - else you need to call "connect()" before you can communicate with the devices.
 
+#### A note about TCP communcation `timeout`
+
+On TCP networks, this sets the response time-out in milliseconds.  The default is a quite conservative 4 seconds (4000ms).  For serial networks, it is a function of the baud rate: between 11 and 330 "bit times" to which one should factor in some round-trip-time delay for network traversal.
+
+`libmbus` uses [the following equation](https://github.com/rscada/libmbus/blob/master/mbus/mbus-serial.c#L67-L79) to estimate this on serial networks (factoring in about 100ms round-trip-time between the host and the M-Bus driver):
+
+```
+(330 + 11) / BAUD + 0.15
+```
+
+ * 2400 baud network should respond within 300ms (~292ms), assuming 100ms host-driver round-trip time.
+ * 300 baud network should respond within 1300ms (~1287ms), assuming 100ms host-driver round-trip time.
+
 ### connect(callback)
 Call this method to connect to TCP/Serial. Needs to be done before you can communicate with the devices.
 The optional callback will be called with an *error* parameter that is *null* on success.
