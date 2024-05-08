@@ -139,6 +139,46 @@ class MbusMaster {
         });
     }
 
+    pingDeviceAsync(address) {
+        return new Promise((resolve, reject) => {
+            this.pingDevice(address, (err) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+    }
+
+    pingDevice(address, callback) {
+        if (!this.mbusMaster.connected && !this.options.autoConnect) {
+            if (callback) callback(new Error('Not connected and autoConnect is false'));
+            return;
+        }
+
+        this.connect((err) => {
+            if (err) {
+                if (callback) callback(err);
+                return;
+            }
+
+            this.mbusMaster.pingDevice(address, (err) => {
+                if (err != null) {
+                    err = new Error(err);
+                }
+                else {
+                    err = null;
+                }
+
+                if (callback) {
+                    callback(err);
+                }
+            });
+        });
+    }
+
     pingNetwork(callback) {
         if (!this.mbusMaster.connected && !this.options.autoConnect) {
             if (callback) callback(new Error('Not connected and autoConnect is false'));
