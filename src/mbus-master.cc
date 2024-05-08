@@ -910,11 +910,6 @@ private:
 NAN_METHOD(MbusMaster::PingDevice) {
     Nan::HandleScope scope;
 
-     // Print statement when entering the method
-     printf("STOH: Entering PingDevice method\n");
-
-
-
     MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     char *address = get(Nan::To<v8::String>(info[0]).ToLocalChecked(),"0");
