@@ -52,6 +52,7 @@ NAN_MODULE_INIT(MbusMaster::Init) {
     Nan::SetPrototypeMethod(tpl, "get", Get);
     Nan::SetPrototypeMethod(tpl, "scan", ScanSecondary);
     Nan::SetPrototypeMethod(tpl, "setPrimaryId", SetPrimaryId);
+    Nan::SetPrototypeMethod(tpl, "pingDevice", PingDevice);
 
     v8::Local<v8::Function> function = Nan::GetFunction(tpl).ToLocalChecked();
     constructor.Reset(function);
@@ -817,4 +818,117 @@ NAN_GETTER(MbusMaster::HandleGetters) {
 }
 
 NAN_SETTER(MbusMaster::HandleSetters) {
+}
+
+
+class PingWorker : public Nan::AsyncWorker {
+public:
+    PingWorker(Nan::Callback *callback, char *addr_str, uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
+    : Nan::AsyncWorker(callback), addr_str(addr_str), lock(lock), handle(handle), communicationInProgress(communicationInProgress) {}
+    ~PingWorker() {
+        free(addr_str);
+    }
+
+    // Executed inside the worker-thread.
+    // It is not safe to access V8, or V8 data structures
+    // here, so everything we need for input and output
+    // should go on `this`.
+    void Execute () {
+        uv_rwlock_wrlock(lock);
+
+        mbus_frame reply;
+        char error[100];
+        int address;
+        int secondary_selected = 0;
+        int request_frame_res;
+
+        memset((void *)&reply, 0, sizeof(mbus_frame));
+
+        if (addr_str == nullptr || strlen(addr_str) == 0) {
+            // Ping the network
+            if (mbus_send_ping_frame(handle, MBUS_ADDRESS_NETWORK_LAYER, 1) == -1)
+            {
+                sprintf(error, "Failed to initialize slave[%s].", addr_str);
+                SetErrorMessage(error);
+                uv_rwlock_wrunlock(lock);
+                return;
+            }
+        }
+        else {
+            // Ping a specific device
+            address = atoi(addr_str);
+
+            if (mbus_send_ping_frame(handle, address, 1) == -1)
+            {
+                sprintf(error, "Failed to initialize slave[%s].", addr_str);
+                SetErrorMessage(error);
+                uv_rwlock_wrunlock(lock);
+                return;
+            }
+        }
+
+        // manual free
+        mbus_frame_free((mbus_frame*)reply.next);
+
+        uv_rwlock_wrunlock(lock);
+    }
+
+    // Executed when the async work is complete
+    // this function will be run inside the main event loop
+    // so it is safe to use V8 again
+    void HandleOKCallback () {
+        Nan::HandleScope scope;
+
+        *communicationInProgress = false;
+
+        Local<Value> argv[] = {
+            Nan::Null()
+        };
+        callback->Call(1, argv);
+    };
+
+    void HandleErrorCallback () {
+        Nan::HandleScope scope;
+
+        *communicationInProgress = false;
+
+        Local<Value> argv[] = {
+            Nan::Error(ErrorMessage())
+        };
+
+        callback->Call(1, argv);
+    }
+private:
+    char *data;
+    char *addr_str;
+    bool ping_first;
+    uv_rwlock_t *lock;
+    mbus_handle *handle;
+    bool *communicationInProgress;
+};
+
+NAN_METHOD(MbusMaster::PingDevice) {
+    Nan::HandleScope scope;
+
+     // Print statement when entering the method
+     printf("STOH: Entering PingDevice method\n");
+
+
+
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
+
+    char *address = get(Nan::To<v8::String>(info[0]).ToLocalChecked(),"0");
+    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+
+    if(obj->connected) {
+        obj->communicationInProgress = true;
+
+        Nan::AsyncQueueWorker(new PingWorker(callback, address, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
+    } else {
+        Local<Value> argv[] = {
+            Nan::Error("Not connected to port")
+        };
+        callback->Call(1, argv);
+    }
+    info.GetReturnValue().SetUndefined();
 }
