@@ -53,6 +53,7 @@ NAN_MODULE_INIT(MbusMaster::Init) {
     Nan::SetPrototypeMethod(tpl, "scan", ScanSecondary);
     Nan::SetPrototypeMethod(tpl, "setPrimaryId", SetPrimaryId);
     Nan::SetPrototypeMethod(tpl, "pingDevice", PingDevice);
+    Nan::SetPrototypeMethod(tpl, "pingNetwork", PingNetwork);
 
     v8::Local<v8::Function> function = Nan::GetFunction(tpl).ToLocalChecked();
     constructor.Reset(function);
@@ -919,6 +920,26 @@ NAN_METHOD(MbusMaster::PingDevice) {
         obj->communicationInProgress = true;
 
         Nan::AsyncQueueWorker(new PingWorker(callback, address, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
+    } else {
+        Local<Value> argv[] = {
+            Nan::Error("Not connected to port")
+        };
+        callback->Call(1, argv);
+    }
+    info.GetReturnValue().SetUndefined();
+}
+
+
+NAN_METHOD(MbusMaster::PingNetwork) {
+    Nan::HandleScope scope;
+
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
+    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+
+    if(obj->connected) {
+        obj->communicationInProgress = true;
+
+        Nan::AsyncQueueWorker(new PingWorker(callback, nullptr, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
     } else {
         Local<Value> argv[] = {
             Nan::Error("Not connected to port")
