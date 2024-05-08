@@ -126,7 +126,20 @@ class MbusMaster {
         });
     }
 
-    getData(address, callback) {
+    pingNetworkAsync() {
+        return new Promise((resolve, reject) => {
+            this.pingNetwork((err) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve();
+                }
+            });
+        });
+    }
+
+    pingNetwork(callback) {
         if (!this.mbusMaster.connected && !this.options.autoConnect) {
             if (callback) callback(new Error('Not connected and autoConnect is false'));
             return;
@@ -137,7 +150,50 @@ class MbusMaster {
                 if (callback) callback(err);
                 return;
             }
-            this.mbusMaster.get(address, (err, data) => {
+
+            this.mbusMaster.pingNetwork((err) => {
+                if (err != null) {
+                    err = new Error(err);
+                }
+                else {
+                    err = null;
+                }
+
+                if (callback) {
+                    callback(err);
+                }
+            });
+        });
+    }
+
+    getData(address, options, callback) {
+        // default options
+        // pingFirst: Work-around buggy behaviour with some M-Bus devices,
+        //            notably Sontex Supercal531
+        //            https://github.com/rscada/libmbus/pull/95
+        let pingFirst = true;
+
+        if (typeof(options) === "function") {
+            callback = options;
+            options = null;
+        }
+
+        if (options) {
+            // de-structure
+            ({pingFirst} = options);
+        }
+
+        if (!this.mbusMaster.connected && !this.options.autoConnect) {
+            if (callback) callback(new Error('Not connected and autoConnect is false'));
+            return;
+        }
+
+        this.connect((err) => {
+            if (err) {
+                if (callback) callback(err);
+                return;
+            }
+            this.mbusMaster.get(address, pingFirst, (err, data) => {
                 if (!err && data) {
                     //data = JSON.parse(data).MBusData;
                     const parserOpt = {
@@ -165,9 +221,9 @@ class MbusMaster {
         });
     }
 
-    getDataAsync(address) {
+    getDataAsync(address, options=null) {
         return new Promise((resolve, reject) => {
-            this.getData(address, (err, data) => {
+            this.getData(address, options, (err, data) => {
                 if (err) {
                     reject(err);
                 }
