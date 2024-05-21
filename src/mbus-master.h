@@ -20,6 +20,7 @@ private:
     static NAN_METHOD(Close);
     static NAN_METHOD(ScanSecondary);
     static NAN_METHOD(Get);
+    static NAN_METHOD(GetMultiTelegram);
     static NAN_METHOD(SetPrimaryId);
     static NAN_METHOD(PingDevice);
     static NAN_METHOD(PingNetwork);

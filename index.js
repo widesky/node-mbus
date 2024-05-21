@@ -139,9 +139,9 @@ class MbusMaster {
         });
     }
 
-    pingDeviceAsync(address) {
+    pingDeviceAsync(address, options) {
         return new Promise((resolve, reject) => {
-            this.pingDevice(address, (err) => {
+            this.pingDevice(address, options, (err) => {
                 if (err) {
                     reject(err);
                 }
@@ -152,7 +152,7 @@ class MbusMaster {
         });
     }
 
-    pingDevice(address, callback) {
+    pingDevice(address, options, callback) {
         if (!this.mbusMaster.connected && !this.options.autoConnect) {
             if (callback) callback(new Error('Not connected and autoConnect is false'));
             return;
@@ -164,7 +164,14 @@ class MbusMaster {
                 return;
             }
 
-            this.mbusMaster.pingDevice(address, (err) => {
+            let noReply;
+
+            if (options) {                                                                                   
+                // de-structure                                                                              
+                ({noReply = true} = options);
+            }
+
+            this.mbusMaster.pingDevice(address, noReply, (err) => {
                 if (err != null) {
                     err = new Error(err);
                 }
@@ -211,7 +218,8 @@ class MbusMaster {
         // pingFirst: Work-around buggy behaviour with some M-Bus devices,
         //            notably Sontex Supercal531
         //            https://github.com/rscada/libmbus/pull/95
-        let pingFirst = true;
+        let pingNetworkFirst;
+        let pingDeviceFirst;
 
         if (typeof(options) === "function") {
             callback = options;
@@ -220,7 +228,7 @@ class MbusMaster {
 
         if (options) {
             // de-structure
-            ({pingFirst} = options);
+            ({pingNetworkFirst = true, pingDeviceFirst = true} = options);
         }
 
         if (!this.mbusMaster.connected && !this.options.autoConnect) {
@@ -233,7 +241,7 @@ class MbusMaster {
                 if (callback) callback(err);
                 return;
             }
-            this.mbusMaster.get(address, pingFirst, (err, data) => {
+            this.mbusMaster.get(address, pingNetworkFirst, pingDeviceFirst, (err, data) => {
                 if (!err && data) {
                     //data = JSON.parse(data).MBusData;
                     const parserOpt = {
@@ -270,6 +278,75 @@ class MbusMaster {
                 else {
                     resolve(data);
                 }
+            });
+        });
+    }
+
+    getDataMultiTelegramAsync(address, options=null) {
+        return new Promise((resolve, reject) => {
+            this.getDataMultiTelegram(address, options, (err, data) => {
+                if (err) {
+                    reject(err);
+                }
+                else {
+                    resolve(data);
+                }
+            });
+        });
+    }
+
+    getDataMultiTelegram(address, options, callback) {
+        // default options
+        // pingFirst: Work-around buggy behaviour with some M-Bus devices,
+        //            notably Sontex Supercal531
+        //            https://github.com/rscada/libmbus/pull/95
+        let pingNetworkFirst;
+        let pingDeviceFirst;
+
+        if (typeof(options) === "function") {
+            callback = options;
+            options = null;
+        }
+
+        if (options) {
+            // de-structure
+            ({pingNetworkFirst = true, pingDeviceFirst = true} = options);
+        }
+
+        if (!this.mbusMaster.connected && !this.options.autoConnect) {
+            if (callback) callback(new Error('Not connected and autoConnect is false'));
+            return;
+        }
+
+        this.connect((err) => {
+            if (err) {
+                if (callback) callback(err);
+                return;
+            }
+            this.mbusMaster.getMultiTelegram(address, pingNetworkFirst, pingDeviceFirst, (err, data) => {
+                if (!err && data) {
+                    //data = JSON.parse(data).MBusData;
+                    const parserOpt = {
+                        explicitArray: false,
+                        mergeAttrs: true,
+                        valueProcessors: [xmlParser.processors.parseNumbers],
+                        attrValueProcessors: [xmlParser.processors.parseNumbers]
+                    };
+                    xmlParser.parseString(data, parserOpt, (err, result) => {
+                        if (!err && result && result.MBusData) {
+                            result = result.MBusData;
+                            if (result.DataRecord && !Array.isArray(result.DataRecord)) {
+                                result.DataRecord = [result.DataRecord];
+                            }
+                        }
+                        if (callback) callback(err, result);
+                    });
+                    return;
+                }
+                else {
+                    err = new Error(err);
+                }
+                if (callback) callback(err, data);
             });
         });
     }

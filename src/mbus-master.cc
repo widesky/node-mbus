@@ -50,6 +50,7 @@ NAN_MODULE_INIT(MbusMaster::Init) {
     Nan::SetPrototypeMethod(tpl, "openTCP", OpenTCP);
     Nan::SetPrototypeMethod(tpl, "close", Close);
     Nan::SetPrototypeMethod(tpl, "get", Get);
+    Nan::SetPrototypeMethod(tpl, "getMultiTelegram", GetMultiTelegram);
     Nan::SetPrototypeMethod(tpl, "scan", ScanSecondary);
     Nan::SetPrototypeMethod(tpl, "setPrimaryId", SetPrimaryId);
     Nan::SetPrototypeMethod(tpl, "pingDevice", PingDevice);
@@ -233,134 +234,36 @@ static int init_slaves(mbus_handle *handle)
     return 1;
 }
 
-class RecieveWorker : public Nan::AsyncWorker {
+class BaseWorker : public Nan::AsyncWorker {
 public:
-    RecieveWorker(Nan::Callback *callback,char *addr_str,uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
-    : Nan::AsyncWorker(callback), addr_str(addr_str), lock(lock), handle(handle), communicationInProgress(communicationInProgress) {}
-    ~RecieveWorker() {
+    BaseWorker(Nan::Callback *callback, char *addr_str, uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
+        : Nan::AsyncWorker(callback), addr_str(addr_str), lock(lock), handle(handle), communicationInProgress(communicationInProgress), data(nullptr) {}
+    virtual ~BaseWorker() {
         free(addr_str);
+        if (data) free(data);
     }
 
-    // Executed inside the worker-thread.
-    // It is not safe to access V8, or V8 data structures
-    // here, so everything we need for input and output
-    // should go on `this`.
-    void Execute () {
-        uv_rwlock_wrlock(lock);
+protected:
+    char *data;
+    char *addr_str;
+    uv_rwlock_t *lock;
+    mbus_handle *handle;
+    bool *communicationInProgress;
 
-        mbus_frame reply;
-        char error[100];
-        int address;
-        int secondary_selected = 0;
-        int request_frame_res;
-
-        memset((void *)&reply, 0, sizeof(mbus_frame));
-
-        if (init_slaves(handle) == 0)
-        {
-            sprintf(error, "Failed to init slaves.");
-            SetErrorMessage(error);
-            uv_rwlock_wrunlock(lock);
-            return;
-        }
-
-        if (mbus_is_secondary_address(addr_str))
-        {
-            // secondary addressing
-
-            int ret;
-
-            ret = mbus_select_secondary_address(handle, addr_str);
-
-            if (ret == MBUS_PROBE_COLLISION)
-            {
-                sprintf(error, "The address mask [%s] matches more than one device.", addr_str);
-                SetErrorMessage(error);
-                uv_rwlock_wrunlock(lock);
-                return;
-            }
-            else if (ret == MBUS_PROBE_NOTHING)
-            {
-                sprintf(error, "The selected secondary address does not match any device [%s].", addr_str);
-                SetErrorMessage(error);
-                uv_rwlock_wrunlock(lock);
-                return;
-            }
-            else if (ret == MBUS_PROBE_ERROR)
-            {
-                sprintf(error, "Failed to select secondary address [%s].", addr_str);
-                SetErrorMessage(error);
-                uv_rwlock_wrunlock(lock);
-                return;
-            }
-            else if (ret == MBUS_PROBE_SINGLE)
-            {
-                secondary_selected = 1;
-            }
-
-            address = MBUS_ADDRESS_NETWORK_LAYER;
-        }
-        else
-        {
-            // primary addressing
-            address = atoi(addr_str);
-
-            // send a reset SND_NKE to the device before requesting data
-            // this does not make sense for devices that are accessed by secondary addressing
-            // as the reset de-selects the device
-            // taken from https://github.com/rscada/libmbus/pull/95
-            if (mbus_send_ping_frame(handle, address, 1) == -1)
-            {
-                sprintf(error, "Failed to initialize slave[%s].", addr_str);
-                SetErrorMessage(error);
-
-                // manual free
-                mbus_frame_free((mbus_frame*)reply.next);
-
-                uv_rwlock_wrunlock(lock);
-                return;
-            }
-        }
-
-        // instead of the send and recv, use this sendrecv function that
-        // takes care of the possibility of multi-telegram replies (limit = 16 frames)
-        if (mbus_sendrecv_request(handle, address, &reply, MAXFRAMES) != 0)
-        {
-            sprintf(error, "Failed to send/receive M-Bus request frame[%s].", addr_str);
-            SetErrorMessage(error);
-
-            // manual free
-            mbus_frame_free((mbus_frame*)reply.next);
-
-            uv_rwlock_wrunlock(lock);
-            return;
-        }
-
-        //
-        // generate XML
-        //
-        if ((data = mbus_frame_xml(&reply)) == NULL)
-        {
-            sprintf(error, "Failed to generate XML representation of MBUS frame [%s].", addr_str);
-            SetErrorMessage(error);
-
-            // manual free
-			mbus_frame_free((mbus_frame*)reply.next);
-
-            uv_rwlock_wrunlock(lock);
-            return;
-        }
-
-        // manual free
-        mbus_frame_free((mbus_frame*)reply.next);
-
+    void handleCommunicationError(const char *error) {
+        SetErrorMessage(error);
         uv_rwlock_wrunlock(lock);
     }
 
-    // Executed when the async work is complete
-    // this function will be run inside the main event loop
-    // so it is safe to use V8 again
-    void HandleOKCallback () {
+    void generateXML(mbus_frame &reply) {
+        data = mbus_frame_xml(&reply);
+        if (data == NULL) {
+            handleCommunicationError("Failed to generate XML representation of MBUS frame.");
+        }
+        mbus_frame_free((mbus_frame *)reply.next);
+    }
+
+    void handleOKCallback() {
         Nan::HandleScope scope;
 
         *communicationInProgress = false;
@@ -369,11 +272,10 @@ public:
             Nan::Null(),
             Nan::New<String>(data).ToLocalChecked()
         };
-        free(data);
         callback->Call(2, argv);
-    };
+    }
 
-    void HandleErrorCallback () {
+    void handleErrorCallback() {
         Nan::HandleScope scope;
 
         *communicationInProgress = false;
@@ -384,12 +286,154 @@ public:
 
         callback->Call(1, argv);
     }
+};
+
+class RecieveWorker : public BaseWorker {
+public:
+    RecieveWorker(Nan::Callback *callback, char *addr_str, bool ping_network_first, bool ping_device_first, uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
+        : BaseWorker(callback, addr_str, lock, handle, communicationInProgress), ping_network_first(ping_network_first), ping_device_first(ping_device_first) {}
+
+    void Execute() override {
+        uv_rwlock_wrlock(lock);
+
+        mbus_frame reply;
+        char error[100];
+        int address;
+        int secondary_selected = 0;
+        memset((void *)&reply, 0, sizeof(mbus_frame));
+
+        if (ping_network_first && init_slaves(handle) == 0) {
+            handleCommunicationError("Failed to init slaves.");
+            return;
+        }
+
+        if (mbus_is_secondary_address(addr_str)) {
+            int ret = mbus_select_secondary_address(handle, addr_str);
+            if (ret == MBUS_PROBE_COLLISION) {
+                sprintf(error, "The address mask [%s] matches more than one device.", addr_str);
+                handleCommunicationError(error);
+                return;
+            } else if (ret == MBUS_PROBE_NOTHING) {
+                sprintf(error, "The selected secondary address does not match any device [%s].", addr_str);
+                handleCommunicationError(error);
+                return;
+            } else if (ret == MBUS_PROBE_ERROR) {
+                sprintf(error, "Failed to select secondary address [%s].", addr_str);
+                handleCommunicationError(error);
+                return;
+            } else if (ret == MBUS_PROBE_SINGLE) {
+                secondary_selected = 1;
+            }
+            address = MBUS_ADDRESS_NETWORK_LAYER;
+        } else {
+            address = atoi(addr_str);
+            if (ping_device_first && mbus_send_ping_frame(handle, address, 1) == -1) {
+                sprintf(error, "Failed to initialize slave[%s].", addr_str);
+                handleCommunicationError(error);
+                mbus_frame_free((mbus_frame *)reply.next);
+                return;
+            }
+            if (mbus_send_request_frame(handle, address) == -1) {
+                sprintf(error, "Failed to send M-Bus request frame[%s].", addr_str);
+                handleCommunicationError(error);
+                return;
+            }
+        }
+
+        if (mbus_recv_frame(handle, &reply) != 0) {
+            sprintf(error, "Failed to receive M-Bus request frame[%s].", addr_str);
+            handleCommunicationError(error);
+            mbus_frame_free((mbus_frame *)reply.next);
+            return;
+        }
+
+        generateXML(reply);
+        uv_rwlock_wrunlock(lock);
+    }
+
+    void HandleOKCallback() override {
+        BaseWorker::handleOKCallback();
+    }
+
+    void HandleErrorCallback() override {
+        BaseWorker::handleErrorCallback();
+    }
+
 private:
-    char *data;
-    char *addr_str;
-    uv_rwlock_t *lock;
-    mbus_handle *handle;
-    bool *communicationInProgress;
+    bool ping_network_first;
+    bool ping_device_first;
+};
+
+
+class RecieveWorkerMultiFrame : public BaseWorker {
+public:
+    RecieveWorkerMultiFrame(Nan::Callback *callback, char *addr_str, bool ping_network_first, bool ping_device_first, uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
+        : BaseWorker(callback, addr_str, lock, handle, communicationInProgress), ping_network_first(ping_network_first), ping_device_first(ping_device_first) {}
+
+    void Execute() override {
+        uv_rwlock_wrlock(lock);
+
+        mbus_frame reply;
+        char error[100];
+        int address;
+        int secondary_selected = 0;
+        memset((void *)&reply, 0, sizeof(mbus_frame));
+
+        if (ping_network_first && init_slaves(handle) == 0) {
+            handleCommunicationError("Failed to init slaves.");
+            return;
+        }
+
+        if (mbus_is_secondary_address(addr_str)) {
+            int ret = mbus_select_secondary_address(handle, addr_str);
+            if (ret == MBUS_PROBE_COLLISION) {
+                sprintf(error, "The address mask [%s] matches more than one device.", addr_str);
+                handleCommunicationError(error);
+                return;
+            } else if (ret == MBUS_PROBE_NOTHING) {
+                sprintf(error, "The selected secondary address does not match any device [%s].", addr_str);
+                handleCommunicationError(error);
+                return;
+            } else if (ret == MBUS_PROBE_ERROR) {
+                sprintf(error, "Failed to select secondary address [%s].", addr_str);
+                handleCommunicationError(error);
+                return;
+            } else if (ret == MBUS_PROBE_SINGLE) {
+                secondary_selected = 1;
+            }
+            address = MBUS_ADDRESS_NETWORK_LAYER;
+        } else {
+            address = atoi(addr_str);
+            if (ping_device_first && mbus_send_ping_frame(handle, address, 1) == -1) {
+                sprintf(error, "Failed to initialize slave[%s].", addr_str);
+                handleCommunicationError(error);
+                mbus_frame_free((mbus_frame *)reply.next);
+                return;
+            }
+        }
+
+        if (mbus_sendrecv_request(handle, address, &reply, MAXFRAMES) != 0) {
+            sprintf(error, "Failed to send/receive M-Bus request frame[%s].", addr_str);
+            handleCommunicationError(error);
+            mbus_frame_free((mbus_frame *)reply.next);
+            return;
+        }
+
+        generateXML(reply);
+        uv_rwlock_wrunlock(lock);
+    }
+
+    void HandleOKCallback() override {
+        BaseWorker::handleOKCallback();
+    }
+
+    void HandleErrorCallback() override {
+        BaseWorker::handleErrorCallback();
+    }
+
+private:
+    bool ping_network_first;
+    bool ping_device_first;
 };
 
 NAN_METHOD(MbusMaster::Get) {
@@ -398,11 +442,14 @@ NAN_METHOD(MbusMaster::Get) {
     MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     char *address = get(Nan::To<v8::String>(info[0]).ToLocalChecked(),"0");
-    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+    bool ping_network_first = Nan::To<bool>(info[1]).FromJust();
+    bool ping_device_first = Nan::To<bool>(info[2]).FromJust();
+    Nan::Callback *callback = new Nan::Callback(info[3].As<Function>());
+
     if(obj->connected) {
         obj->communicationInProgress = true;
 
-        Nan::AsyncQueueWorker(new RecieveWorker(callback, address, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
+        Nan::AsyncQueueWorker(new RecieveWorker(callback, address, ping_network_first, ping_device_first, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
     } else {
         Local<Value> argv[] = {
             Nan::Error("Not connected to port")
@@ -821,63 +868,39 @@ NAN_GETTER(MbusMaster::HandleGetters) {
 NAN_SETTER(MbusMaster::HandleSetters) {
 }
 
-
-class PingWorker : public Nan::AsyncWorker {
+class PingWorker : public BaseWorker {
 public:
-    PingWorker(Nan::Callback *callback, char *addr_str, uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
-    : Nan::AsyncWorker(callback), addr_str(addr_str), lock(lock), handle(handle), communicationInProgress(communicationInProgress) {}
-    ~PingWorker() {
-        free(addr_str);
-    }
+    PingWorker(Nan::Callback *callback, char *addr_str, bool no_reply, uv_rwlock_t *lock, mbus_handle *handle, bool *communicationInProgress)
+        : BaseWorker(callback, addr_str, lock, handle, communicationInProgress), no_reply(no_reply) {}
 
-    // Executed inside the worker-thread.
-    // It is not safe to access V8, or V8 data structures
-    // here, so everything we need for input and output
-    // should go on `this`.
-    void Execute () {
+    void Execute() override {
         uv_rwlock_wrlock(lock);
 
         mbus_frame reply;
         char error[100];
         int address;
-        int secondary_selected = 0;
-        int request_frame_res;
-
         memset((void *)&reply, 0, sizeof(mbus_frame));
 
         if (addr_str == nullptr || strlen(addr_str) == 0) {
-            // Ping the network
-            if (mbus_send_ping_frame(handle, MBUS_ADDRESS_NETWORK_LAYER, 1) == -1)
-            {
+            if (mbus_send_ping_frame(handle, MBUS_ADDRESS_NETWORK_LAYER, 1) == -1) {
                 sprintf(error, "Failed to initialize slave[%s].", addr_str);
-                SetErrorMessage(error);
-                uv_rwlock_wrunlock(lock);
+                handleCommunicationError(error);
                 return;
             }
-        }
-        else {
-            // Ping a specific device
+        } else {
             address = atoi(addr_str);
-
-            if (mbus_send_ping_frame(handle, address, 1) == -1)
-            {
+            if (mbus_send_ping_frame(handle, address, no_reply ? 1 : 0) == -1) {
                 sprintf(error, "Failed to initialize slave[%s].", addr_str);
-                SetErrorMessage(error);
-                uv_rwlock_wrunlock(lock);
+                handleCommunicationError(error);
                 return;
             }
         }
 
-        // manual free
-        mbus_frame_free((mbus_frame*)reply.next);
-
+        mbus_frame_free((mbus_frame *)reply.next);
         uv_rwlock_wrunlock(lock);
     }
 
-    // Executed when the async work is complete
-    // this function will be run inside the main event loop
-    // so it is safe to use V8 again
-    void HandleOKCallback () {
+    void HandleOKCallback() override {
         Nan::HandleScope scope;
 
         *communicationInProgress = false;
@@ -886,26 +909,14 @@ public:
             Nan::Null()
         };
         callback->Call(1, argv);
-    };
-
-    void HandleErrorCallback () {
-        Nan::HandleScope scope;
-
-        *communicationInProgress = false;
-
-        Local<Value> argv[] = {
-            Nan::Error(ErrorMessage())
-        };
-
-        callback->Call(1, argv);
     }
+
+    void HandleErrorCallback() override {
+        BaseWorker::handleErrorCallback();
+    }
+
 private:
-    char *data;
-    char *addr_str;
-    bool ping_first;
-    uv_rwlock_t *lock;
-    mbus_handle *handle;
-    bool *communicationInProgress;
+    bool no_reply;
 };
 
 NAN_METHOD(MbusMaster::PingDevice) {
@@ -914,12 +925,13 @@ NAN_METHOD(MbusMaster::PingDevice) {
     MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
 
     char *address = get(Nan::To<v8::String>(info[0]).ToLocalChecked(),"0");
-    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+    bool no_reply = Nan::To<bool>(info[1]).FromJust();
+    Nan::Callback *callback = new Nan::Callback(info[2].As<Function>());
 
     if(obj->connected) {
         obj->communicationInProgress = true;
 
-        Nan::AsyncQueueWorker(new PingWorker(callback, address, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
+        Nan::AsyncQueueWorker(new PingWorker(callback, address, no_reply, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
     } else {
         Local<Value> argv[] = {
             Nan::Error("Not connected to port")
@@ -934,12 +946,42 @@ NAN_METHOD(MbusMaster::PingNetwork) {
     Nan::HandleScope scope;
 
     MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
-    Nan::Callback *callback = new Nan::Callback(info[1].As<Function>());
+    Nan::Callback *callback = new Nan::Callback(info[0].As<Function>());
 
     if(obj->connected) {
         obj->communicationInProgress = true;
 
-        Nan::AsyncQueueWorker(new PingWorker(callback, nullptr, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
+        Nan::AsyncQueueWorker(new PingWorker(callback, nullptr, false, &(obj->queueLock), obj->handle, &(obj->communicationInProgress)));
+    } else {
+        Local<Value> argv[] = {
+            Nan::Error("Not connected to port")
+        };
+        callback->Call(1, argv);
+    }
+    info.GetReturnValue().SetUndefined();
+}
+
+NAN_METHOD(MbusMaster::GetMultiTelegram) {
+    Nan::HandleScope scope;
+
+    MbusMaster* obj = node::ObjectWrap::Unwrap<MbusMaster>(info.This());
+
+    char *address = get(Nan::To<v8::String>(info[0]).ToLocalChecked(),"0");
+    bool ping_network_first = Nan::To<bool>(info[1]).FromJust();
+    bool ping_device_first = Nan::To<bool>(info[2]).FromJust();
+    Nan::Callback *callback = new Nan::Callback(info[3].As<Function>());
+
+
+    if(obj->connected) {
+        obj->communicationInProgress = true;
+
+        Nan::AsyncQueueWorker(new RecieveWorkerMultiFrame(callback,
+            address,
+            ping_network_first,
+            ping_device_first,
+            &(obj->queueLock),
+            obj->handle,
+            &(obj->communicationInProgress)));
     } else {
         Local<Value> argv[] = {
             Nan::Error("Not connected to port")
